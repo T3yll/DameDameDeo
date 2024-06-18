@@ -14,7 +14,7 @@ class Pion:
 
     def draw(self):
         self.oval = self.canvas.create_oval(self.x1+self.size, self.y1+self.size, self.x2-self.size, self.y2-self.size, fill=self.color, outline="black")
-
+        self.oval.bind('<Button-1>', print("salope"))
     def move_to(self, x, y):
         dx = x - self.x1
         dy = y - self.y1
