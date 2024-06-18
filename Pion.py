@@ -1,25 +1,23 @@
 import tkinter as tk
 
 class Pion:
-    def __init__(self, canvas, x, y, color, size=30):
+    def __init__(self, canvas, x:int, y:int,x2,y2, color, size=10):
         self.canvas = canvas
-        self.x = x
-        self.y = y
+        self.x1 = x
+        self.x2 = x2
+        self.y1 = y
+        self.y2 = y2
         self.color = color
-        self.size = size
+        self.size:float = size
         self.oval = None
         self.draw()
 
     def draw(self):
-        x1 = self.x - self.size / 2
-        y1 = self.y - self.size / 2
-        x2 = self.x + self.size / 2
-        y2 = self.y + self.size / 2
-        self.oval = self.canvas.create_oval(x1, y1, x2, y2, fill=self.color, outline="black")
+        self.oval = self.canvas.create_oval(self.x1+self.size, self.y1+self.size, self.x2-self.size, self.y2-self.size, fill=self.color, outline="black")
 
     def move_to(self, x, y):
-        dx = x - self.x
-        dy = y - self.y
+        dx = x - self.x1
+        dy = y - self.y1
         self.canvas.move(self.oval, dx, dy)
-        self.x = x
-        self.y = y
+        self.x1 = x
+        self.y1 = y
