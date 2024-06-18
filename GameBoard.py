@@ -1,5 +1,4 @@
 import tkinter as tk
-import generationDico as gd
 
 import game
 import Pion

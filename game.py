@@ -1,4 +1,3 @@
-import generationDico as gd
 class Game:
     def __init__(self):
         self.grid = [[0 for x in range(10)] for y in range(10)]
@@ -21,15 +20,9 @@ class Game:
                 else:
                     if k%2==1:
                         self.grid[i][k]=current
-        #self.print()
-        possible_moves = gd.generate_dames_moves()
-        for key, value in possible_moves.items():
-            print(f"Position {key} -> Valeur: {value}")
+        self.print()
 
     def print(self):
         for i,j in enumerate(self.grid):
             print(j)
-
-
-
 
