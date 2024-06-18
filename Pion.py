@@ -21,3 +21,7 @@ class Pion:
         self.canvas.move(self.oval, dx, dy)
         self.x1 = x
         self.y1 = y
+
+    def canMove(GameBoard):
+        return True
+
