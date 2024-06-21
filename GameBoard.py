@@ -13,12 +13,13 @@ class GameBoard:
         self.canvas.grid(row=1, column=1, padx=20, pady=20)
         self.canvas.bind("<Button-1>", self.selectPion)
         self.highlighted = []
+        self.canEat = {}
         self.selectedPion = None
         self.selectedPionPosition = []
         self.square = 80
         self.refreshGrid()
 
-        print(self.cases)
+       # print(self.cases)
 
     def refreshGrid(self):
 
@@ -42,7 +43,7 @@ class GameBoard:
 
     def selectPion(self, event):
         """selectione un pion sur le plateau"""
-        self.print()
+        #self.print()
         for x, row in enumerate(self.cases):
             for y, cell in enumerate(row):
                 if cell == None and [x, y] in self.highlighted and (
@@ -66,16 +67,20 @@ class GameBoard:
         for i in self.highlighted:
             self.canvas.create_rectangle(i[0] * 80, i[1] * 80, i[0] * 80 + 80, i[1] * 80 + 80, fill="brown")
         self.highlighted = []
+        self.canEat = {}
+
+
 
     def isPlayable(self, posX, posY):
         """verifie si une piece a la position posX and posY peut jouer
          et renvoie une liste des coups disponibles ou false si la piece est deja selectionnéé"""
-        print(int(posX))
+        #print(int(posX))
         self.deleteHighlighted()
         self.selectedPion = self.cases[posX][posY]
         self.selectedPionPosition = [posX, posY]
         deplacement= -1 if (self.selectedPion.team==1) else 1
         toret = []
+        other_team = 2 if (self.selectedPion.team==1) else 1
         if not (posX == 0 or posX == 9):
             if self.game.grid[posX - 1][posY - deplacement] == 0:
                 if [posX - 1, posY - deplacement] in self.highlighted:
@@ -85,8 +90,15 @@ class GameBoard:
                 if [posX + 1, posY - deplacement] in self.highlighted:
                     return False
                 toret.append([posX + 1, posY - deplacement])
-            return toret
 
+            if (not posX == 0) and self.game.grid[posX - 1][posY - deplacement] == other_team and self.game.grid[posX - 2][posY - 2 * deplacement] == 0:
+                self.canEat[str((posX - 2,posY - 2 * deplacement))]=(posX - 1,posY - deplacement)
+                toret.append([posX - 2, posY - 2 * deplacement])
+
+            if (not posX == 8) and self.game.grid[posX + 1][posY - deplacement] == other_team and self.game.grid[posX + 2][posY - 2 * deplacement] == 0:
+                self.canEat[str((posX + 2,posY - 2 * deplacement))]=(posX + 1,posY - deplacement)
+                toret.append([posX + 2, posY - 2 * deplacement])
+            return toret
         else:
             if posX == 9 and self.game.grid[posX - 1][posY - deplacement] == 0:
                 if [posX - 1, posY - deplacement] in self.highlighted:
@@ -95,9 +107,15 @@ class GameBoard:
             elif posX == 0 and self.game.grid[posX + 1][posY - deplacement] == 0:
                 if [posX + 1, posY - deplacement] in self.highlighted:
                     return False
-                return [[posX + 1, posY - deplacement]]
+                return  [[posX + 1, posY - deplacement]]
+            if posX == 9 and self.game.grid[posX - 1][posY - deplacement] == other_team and self.game.grid[posX - 2][posY - 2 * deplacement] == 0:
+                self.canEat[str((posX - 2,posY - 2 * deplacement))]=(posX - 1,posY - deplacement)
+                return [[posX - 2, posY - 2 * deplacement]]
+            if posX == 0 and self.game.grid[posX + 1][posY - deplacement] == other_team and self.game.grid[posX + 2][posY - 2 * deplacement] == 0:
+                self.canEat[str((posX + 2,posY - 2 * deplacement))]=(posX + 1,posY - deplacement)
+                return [[posX + 2, posY - 2 * deplacement]]
             else:
-                return []
+                return toret
 
     def tryPlay(self, posX, posY):
         """Essaie de jouer a la position posX,posY dans la grille de jeu
@@ -111,13 +129,24 @@ class GameBoard:
             print("TG")
             return False
         if [posX, posY] in self.highlighted:
+
+            if str((posX, posY)) in self.canEat.keys():
+                key=str((posX, posY))
+                self.game.grid[self.canEat[key][0]][self.canEat[key][1]]=0
+                self.cases[self.canEat[key][0]][self.canEat[key][1]] = None
+            #print(self.canEat)
             self.cases[posX][posY] = self.selectedPion
             self.game.grid[posX][posY] = self.selectedPion.team
             self.game.grid[self.selectedPionPosition[0]][self.selectedPionPosition[1]] = 0
             print("deplace")
             self.refreshGrid()
             self.highlighted = []
+            self.canEat = {}
+            if not self.game.isEnd() == False:
+                print("finito")
             return True
+
+
 
     def print(self):
         for row in self.cases:
