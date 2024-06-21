@@ -1,3 +1,4 @@
+import numpy as np
 from sdl2.examples.pong import Player
 
 
@@ -24,6 +25,13 @@ class Game:
                     if k%2==1:
                         self.grid[i][k]=current
         self.print()
+
+
+    def isEnd(self):
+        tmp=np.unique(np.array(self.grid).flatten())
+        if len(tmp)==2:
+            return np.delete(tmp,0)[0]
+        return False
 
     def print(self):
         for i,j in enumerate(self.grid):
