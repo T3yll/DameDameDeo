@@ -18,3 +18,4 @@ def generate_dames_moves():
     moves_df.to_csv('moves.csv', index=False)
     return moves_dict
 generate_dames_moves()
+

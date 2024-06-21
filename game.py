@@ -26,3 +26,4 @@ class Game:
         for i,j in enumerate(self.grid):
             print(j)
 
+

@@ -1,7 +1,9 @@
 import generationDico as gd
+import pandas as pd
 
 def evalMoves(pionList, gameBoard):
     moves_dict = gd.generate_dames_moves()
+
     #for pionList
     #if pionSelected in PionList can move
     #for moves_dict 
@@ -13,3 +15,4 @@ def evalMoves(pionList, gameBoard):
     #best_moves list = moves_dict.getBestCoords
     #next_moveString = best_moves.random()
     #for pionList
+
