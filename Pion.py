@@ -1,8 +1,9 @@
 import tkinter as tk
 
 class Pion:
-    def __init__(self, canvas, x, y, x2, y2, color, size=10):
+    def __init__(self, canvas, x, y, x2, y2, color, team,size=10):
         self.canvas = canvas
+        self.team = team
         self.x1 = x
         self.x2 = x2
         self.y1 = y

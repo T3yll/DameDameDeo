@@ -8,7 +8,7 @@ class GameBoard:
     def __init__(self):
         self.window = tk.Tk()
         self.canvas = tk.Canvas(self.window, width=800, height=800)
-        self.cases = [[Pion.Pion(self.canvas, 0, 0, 0, 0, "black") for _ in range(10)] for _ in range(10)]
+        self.cases = [[None for i in range(10)] for j in range(10)]
         self.game = game.Game()
         self.canvas.grid(row=1, column=1, padx=20, pady=20)
         self.canvas.bind("<Button-1>", self.selectPion)
@@ -16,21 +16,7 @@ class GameBoard:
         self.selectedPion = None
         self.selectedPionPosition = []
         self.square = 80
-        for i, j in enumerate(self.game.grid):
-            for k, l in enumerate(j):
-                color = "brown" if (i + k) % 2 == 0 else "grey"
-                self.canvas.create_rectangle(i * self.square, k * self.square, i * self.square + self.square,
-                                             k * self.square + self.square, fill=color)
-                if l == 1:
-                    pion = Pion.Pion(self.canvas, i * self.square, k * self.square, i * self.square + self.square,
-                                     k * self.square + self.square, "black", 5)
-                    self.cases[i][k] = pion
-                elif l == 2:
-                    pion = Pion.Pion(self.canvas, i * self.square, k * self.square, i * self.square + self.square,
-                                     k * self.square + self.square, "white", 5)
-                    self.cases[i][k] = pion
-                else:
-                    self.cases[i][k] = None
+        self.refreshGrid()
 
         print(self.cases)
 
@@ -45,18 +31,18 @@ class GameBoard:
                                              k * self.square + self.square, fill=color)
                 if l == 1:
                     pion = Pion.Pion(self.canvas, i * self.square, k * self.square, i * self.square + self.square,
-                                     k * self.square + self.square, "black", 5)
+                                     k * self.square + self.square, "black", 1)
                     self.cases[i][k] = pion
                 elif l == 2:
                     pion = Pion.Pion(self.canvas, i * self.square, k * self.square, i * self.square + self.square,
-                                     k * self.square + self.square, "white", 5)
+                                     k * self.square + self.square, "white", 2)
                     self.cases[i][k] = pion
                 else:
                     self.cases[i][k] = None
 
     def selectPion(self, event):
         """selectione un pion sur le plateau"""
-        # self.print()
+        self.print()
         for x, row in enumerate(self.cases):
             for y, cell in enumerate(row):
                 if cell == None and [x, y] in self.highlighted and (
@@ -88,27 +74,28 @@ class GameBoard:
         self.deleteHighlighted()
         self.selectedPion = self.cases[posX][posY]
         self.selectedPionPosition = [posX, posY]
+        deplacement= -1 if (self.selectedPion.team==1) else 1
         toret = []
         if not (posX == 0 or posX == 9):
-            if self.game.grid[posX - 1][posY - 1] == 0:
-                if [posX - 1, posY - 1] in self.highlighted:
+            if self.game.grid[posX - 1][posY - deplacement] == 0:
+                if [posX - 1, posY - deplacement] in self.highlighted:
                     return False
-                toret.append([posX - 1, posY - 1])
-            if self.game.grid[posX + 1][posY - 1] == 0:
-                if [posX + 1, posY - 1] in self.highlighted:
+                toret.append([posX - 1, posY - deplacement])
+            if self.game.grid[posX + 1][posY - deplacement] == 0:
+                if [posX + 1, posY - deplacement] in self.highlighted:
                     return False
-                toret.append([posX + 1, posY - 1])
+                toret.append([posX + 1, posY - deplacement])
             return toret
 
         else:
-            if posX == 9 and self.game.grid[posX - 1][posY - 1] == 0:
-                if [posX - 1, posY - 1] in self.highlighted:
+            if posX == 9 and self.game.grid[posX - 1][posY - deplacement] == 0:
+                if [posX - 1, posY - deplacement] in self.highlighted:
                     return False
-                return [[posX - 1, posY - 1]]
-            elif posX == 0 and self.game.grid[posX + 1][posY - 1] == 0:
-                if [posX + 1, posY - 1] in self.highlighted:
+                return [[posX - 1, posY - deplacement]]
+            elif posX == 0 and self.game.grid[posX + 1][posY - deplacement] == 0:
+                if [posX + 1, posY - deplacement] in self.highlighted:
                     return False
-                return [[posX + 1, posY - 1]]
+                return [[posX + 1, posY - deplacement]]
             else:
                 return []
 
@@ -125,7 +112,7 @@ class GameBoard:
             return False
         if [posX, posY] in self.highlighted:
             self.cases[posX][posY] = self.selectedPion
-            self.game.grid[posX][posY] = 2
+            self.game.grid[posX][posY] = self.selectedPion.team
             self.game.grid[self.selectedPionPosition[0]][self.selectedPionPosition[1]] = 0
             print("deplace")
             self.refreshGrid()
@@ -134,7 +121,13 @@ class GameBoard:
 
     def print(self):
         for row in self.cases:
-            print(row)
+            toprint= []
+            for cell in row:
+                if cell != None:
+                    toprint.append(cell.team)
+                else:
+                    toprint.append(0)
+            print(toprint)
 
 
 
