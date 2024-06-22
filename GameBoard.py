@@ -93,27 +93,43 @@ class GameBoard:
                 self.canEat[str((posX - 2,posY - 2 * deplacement))]=(posX - 1,posY - deplacement)
                 toret.append([posX - 2, posY - 2 * deplacement])
 
+            if (not posX == 0) and self.game.grid[posX - 1][posY + deplacement] == other_team and self.game.grid[posX - 2][posY + 2 * deplacement] == 0:
+                self.canEat[str((posX - 2, posY + 2 * deplacement))] = (posX - 1, posY + deplacement)
+                toret.append([posX - 2, posY + 2 * deplacement])
+
             if (not posX == 8) and self.game.grid[posX + 1][posY - deplacement] == other_team and self.game.grid[posX + 2][posY - 2 * deplacement] == 0:
                 self.canEat[str((posX + 2,posY - 2 * deplacement))]=(posX + 1,posY - deplacement)
                 toret.append([posX + 2, posY - 2 * deplacement])
+
+            if (not posX == 8) and self.game.grid[posX + 1][posY + deplacement] == other_team and self.game.grid[posX + 2][posY + 2 * deplacement] == 0:
+                self.canEat[str((posX + 2, posY + 2 * deplacement))] = (posX + 1, posY + deplacement)
+                toret.append([posX + 2, posY + 2 * deplacement])
             return toret
-        else:
-            if posX == 9 and self.game.grid[posX - 1][posY - deplacement] == 0:
+        else: #si collé a gauche ou a droite
+            if posX == 9 and self.game.grid[posX - 1][posY - deplacement] == 0: # check en haut a droite
                 if [posX - 1, posY - deplacement] in self.highlighted:
                     return False
-                return [[posX - 1, posY - deplacement]]
-            elif posX == 0 and self.game.grid[posX + 1][posY - deplacement] == 0:
+                toret.append([posX - 1, posY - deplacement])
+            elif posX == 0 and self.game.grid[posX + 1][posY - deplacement] == 0: # check en haut a gauche
                 if [posX + 1, posY - deplacement] in self.highlighted:
                     return False
-                return  [[posX + 1, posY - deplacement]]
-            if posX == 9 and self.game.grid[posX - 1][posY - deplacement] == other_team and self.game.grid[posX - 2][posY - 2 * deplacement] == 0:
+                toret.append([posX + 1, posY - deplacement])
+            if posX == 9 and self.game.grid[posX - 1][posY - deplacement] == other_team and self.game.grid[posX - 2][posY - 2 * deplacement] == 0: # check en haut a gauche si il y a un pion et si c'est vide derriere
                 self.canEat[str((posX - 2,posY - 2 * deplacement))]=(posX - 1,posY - deplacement)
-                return [[posX - 2, posY - 2 * deplacement]]
-            if posX == 0 and self.game.grid[posX + 1][posY - deplacement] == other_team and self.game.grid[posX + 2][posY - 2 * deplacement] == 0:
+                toret.append([posX - 2, posY - 2 * deplacement])
+
+            if posX == 9 and self.game.grid[posX - 1][posY + deplacement] == other_team and self.game.grid[posX - 2][posY + 2 * deplacement] == 0: # check en bas a gauche si il y a un pion et si c'est vide derriere
+                self.canEat[str((posX - 2,posY + 2 * deplacement))]=(posX - 1,posY + deplacement)
+                toret.append([posX - 2, posY + 2 * deplacement])
+
+            if posX == 0 and self.game.grid[posX + 1][posY - deplacement] == other_team and self.game.grid[posX + 2][posY - 2 * deplacement] == 0: # check en haut a droite si il y a un pion et si c'est vide derriere
                 self.canEat[str((posX + 2,posY - 2 * deplacement))]=(posX + 1,posY - deplacement)
-                return [[posX + 2, posY - 2 * deplacement]]
-            else:
-                return toret
+                toret.append([posX + 2, posY - 2 * deplacement])
+
+            if posX == 0 and self.game.grid[posX + 1][posY + deplacement] == other_team and self.game.grid[posX + 2][posY + 2 * deplacement] == 0: # check en bas a droite si il y a un pion et si c'est vide derriere
+                self.canEat[str((posX + 2,posY + 2 * deplacement))]=(posX + 1,posY + deplacement)
+                toret.append([posX + 2, posY + 2 * deplacement])
+            return toret
 
     def tryPlay(self, posX, posY):
         """Essaie de jouer a la position posX,posY dans la grille de jeu
