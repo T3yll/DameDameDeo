@@ -17,6 +17,7 @@ class GameBoard:
         self.selectedPion = None
         self.selectedPionPosition = []
         self.square = 80
+
         self.refreshGrid()
 
        # print(self.cases)
@@ -46,12 +47,9 @@ class GameBoard:
         #self.print()
         for x, row in enumerate(self.cases):
             for y, cell in enumerate(row):
-                if cell == None and [x, y] in self.highlighted and (
-                        event.x > x * self.square and event.x < (x + 1) * self.square) and (
-                        event.y > y * self.square and event.y < (y + 1) * self.square):
+                if cell == None and [x, y] in self.highlighted and (event.x > x * self.square and event.x < (x + 1) * self.square) and (event.y > y * self.square and event.y < (y + 1) * self.square):
                     self.tryPlay(x, y)
-                if cell != None and (event.x > cell.x1 and event.x < cell.x2) and (
-                        event.y > cell.y1 and event.y < cell.y2):
+                if cell != None and (event.x > cell.x1 and event.x < cell.x2) and (event.y > cell.y1 and event.y < cell.y2) and cell.team == self.game.current:
                     print("Pion selected")
                     posToPlay = self.isPlayable(x, y)
                     if posToPlay == False:
@@ -128,7 +126,7 @@ class GameBoard:
         if self.selectedPion == None:
             print("TG")
             return False
-        if [posX, posY] in self.highlighted:
+        if [posX, posY] in self.highlighted: #le bout de code suivant sert a jouer le coup
 
             if str((posX, posY)) in self.canEat.keys():
                 key=str((posX, posY))
@@ -138,10 +136,14 @@ class GameBoard:
             self.cases[posX][posY] = self.selectedPion
             self.game.grid[posX][posY] = self.selectedPion.team
             self.game.grid[self.selectedPionPosition[0]][self.selectedPionPosition[1]] = 0
-            print("deplace")
             self.refreshGrid()
             self.highlighted = []
             self.canEat = {}
+            self.game.changePlayer()
+            print(self.game.tour)
+            self.print()
+
+
             if not self.game.isEnd() == False:
                 print("finito")
             return True
