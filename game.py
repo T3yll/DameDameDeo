@@ -4,7 +4,7 @@ import numpy as np
 
 
 class Game:
-    def __init__(self):
+    def __init__(self,isVirtual=False):
         self.grid = [[0 for x in range(10)] for y in range(10)]
         self.tour = 1
         self.current = random.choice([1, 2])
