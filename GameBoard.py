@@ -9,6 +9,9 @@ class GameBoard:
     def __init__(self):
         self.window = tk.Tk()
         self.canvas = tk.Canvas(self.window, width=800, height=800)
+        self.button = tk.Button(self.window, text="Nouvelle Partie")
+        self.button.grid(row=1, column=0, padx=20, pady=20)
+        
         self.cases = [[Pion.Pion(self.canvas, 0, 0, 0, 0, "black") for _ in range(10)] for _ in range(10)]
         self.game = game.Game()
         self.canvas.grid(row=1, column=1, padx=20, pady=20)
@@ -17,6 +20,8 @@ class GameBoard:
         self.selectedPion = None
         self.selectedPionPosition = []
         self.square = 80
+        letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+        
         for i, j in enumerate(self.game.grid):
             for k, l in enumerate(j):
                 color = "brown" if (i + k) % 2 == 0 else "grey"
@@ -32,7 +37,7 @@ class GameBoard:
                     self.cases[i][k] = pion
                 else:
                     self.cases[i][k] = None
-
+        
         print(self.cases)
 
     def refreshGrid(self):
