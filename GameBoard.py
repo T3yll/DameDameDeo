@@ -14,21 +14,54 @@ class GameBoard:
         self.cases = [[None for i in range(10)] for j in range(10)]
         self.game = G.Game(isVirtual=True)
 
-        self.highlighted = []
-        self.canEat = {}
-        self.selectedPion = None
-        self.selectedPionPosition = []
-        self.square = 80
+        self.highlighted = []  #positions des cases mise en bleu a la selection d'un pion [[x,y],[x2,y2],...]
+        self.canEat = {} #dictionnaire avec pour clé la position d'arrivee sous forme de string '(x,y)' et pour valeurs la position du pion mangé lors du deplacement
+        self.canEatRec={} #dictionnaire avec pour clé la position d'arrivee sous forme de string '(x,y)' et pour valeurs les positions des pions mangés lors du deplacement
+        self.selectedPion = None #Objet Pion de la case selectionnée
+        self.selectedPionPosition = [] #Position du Pion de la case selectionnée
+        self.square = 80 #Taille des carrés
         self.currDame=()
         if isVirtual == False:
             self.refreshGrid()
 
        # print(self.cases)
 
+
+
+    def checkCoupsRec(self,x,y,teamtocheck,toret=[],checkedalready=[],depart=()):
+        print('checkCoupsRec')
+        if [x,y] in checkedalready:
+            return toret
+        forward=[x + 2, y + 2], [x - 2, y + 2], [x + 2, y - 2], [x - 2, y - 2]
+        for i,j in enumerate([[x+1,y+1],[x-1,y+1],[x+1,y-1],[x-1,y-1]]):
+            try:
+                if self.game.grid[j[0]][j[1]] == teamtocheck and self.game.grid[forward[i][0]][forward[i][1]]==0:
+                    toret.append(forward[i])
+                    checkedalready.append([x,y])
+                    self.canEatRec.setdefault(str((forward[i][0],forward[i][1])),[])
+                    if str((forward[i][0],forward[i][1])) in self.canEatRec.keys():
+                        print("debugDepart = ",str(depart))
+                        print("debug = ",self.canEatRec)
+                        self.canEatRec[str((forward[i][0],forward[i][1]))].append([j[0],j[1]])
+                    else:
+                        self.canEatRec[str((forward[i][0],forward[i][1]))]=[[j[0],j[1]]]
+                    return self.checkCoupsRec(forward[i][0],forward[i][1],teamtocheck,toret,checkedalready=checkedalready,depart=depart)
+            except IndexError as e:
+                print(e)
+                continue
+        return toret
+
+
+
+
+
+
+
     def refreshGrid(self):
 
         """rafraichit l'affichage de la grille pour update la position des pions"""
         self.canvas.delete("all")
+
         for i, j in enumerate(self.game.grid):
             for k, l in enumerate(j):
                 isDame=True
@@ -71,6 +104,7 @@ class GameBoard:
             self.canvas.create_rectangle(i[0] * 80, i[1] * 80, i[0] * 80 + 80, i[1] * 80 + 80, fill="brown")
         self.highlighted = []
         self.canEat = {}
+        self.canEatRec = {}
 
 
     def isPlayable(self, posX, posY):
@@ -82,9 +116,7 @@ class GameBoard:
         self.deleteHighlighted()
         self.selectedPion = cases[posX][posY]
         self.selectedPionPosition = [posX, posY]
-        print(posX,posY)
-        print(self.canEat)
-        print("team= ",self.selectedPion.team)
+        print("canEatRec= ",self.canEatRec)
         deplacement= -1 if (self.selectedPion.team==1) else 1
         toret = []
         other_team = 2 if (self.selectedPion.team==1) else 1
@@ -124,6 +156,8 @@ class GameBoard:
                 if [posX + 1, posY - deplacement] in self.highlighted:
                     return False
                 toret.append([posX + 1, posY - deplacement])
+
+            toret.extend(self.checkCoupsRec(posX, posY, other_team,toret=[],depart=(posX, posY),checkedalready=[]))
 
             return toret
         else: #si collé a gauche ou a droite
@@ -167,25 +201,32 @@ class GameBoard:
                 @return: True si le pion a bougé
                 @return: False sinon
                 """
+        print("caneatrec =",self.canEatRec)
         if self.selectedPion == None:
             return False
         if [posX, posY] in self.highlighted: #le bout de code suivant sert a jouer le coup
+            print("mange recursif  =>  ", str((posX, posY)))
+            if str((posX, posY)) in self.canEatRec.keys():
+                for i in self.canEatRec[str((posX, posY))]:
 
-            if str((posX, posY)) in self.canEat.keys():
+                    self.game.grid[i[0]][i[1]] = 0
+            elif str((posX, posY)) in self.canEat.keys():
                 key = str((posX, posY))
                 print(self.canEat)
                 toeat = self.canEat[key]
                 print(toeat)
                 self.game.grid[toeat[0]][toeat[1]]=0
-                self.cases[posX][posY] = None
             #print(self.canEat)
+            self.cases[posX][posY] = None
             self.cases[posX][posY] = self.selectedPion
             self.game.grid[posX][posY] = self.selectedPion.team
             self.game.grid[self.selectedPionPosition[0]][self.selectedPionPosition[1]] = 0
             self.refreshGrid()
             self.highlighted = []
             self.canEat = {}
+            self.canEatRec={}
             self.game.changePlayer()
+
 
             if not self.game.isEnd() == False:
                 print("finito")
