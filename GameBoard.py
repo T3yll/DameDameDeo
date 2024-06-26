@@ -28,6 +28,11 @@ class GameBoard:
 
 
 
+    def getParcour(self,arrivee):
+        depart=self.selectedPionPosition
+
+
+
     def checkCoupsRec(self,x,y,teamtocheck,toret=[],checkedalready=[],depart=()):
         print('checkCoupsRec')
         if [x,y] in checkedalready:
@@ -35,9 +40,22 @@ class GameBoard:
         forward=[x + 2, y + 2], [x - 2, y + 2], [x + 2, y - 2], [x - 2, y - 2]
         for i,j in enumerate([[x+1,y+1],[x-1,y+1],[x+1,y-1],[x-1,y-1]]):
             try:
+
+                if self.game.grid[j[0]][j[1]] == teamtocheck and self.game.grid[forward[i][0]][forward[i][1]] == 0:
+                    toret.append(forward[i])
+                    self.canEatRec.setdefault(str((forward[i][0], forward[i][1])), [])
+                    if str((forward[i][0], forward[i][1])) in self.canEatRec.keys():
+                        print("debugDepart = ", str(depart))
+                        print("debug = ", self.canEatRec)
+                        self.canEatRec[str((forward[i][0], forward[i][1]))].append([j[0], j[1]])
+                    else:
+                        self.canEatRec[str((forward[i][0], forward[i][1]))] = [[j[0], j[1]]]
+                    checkedalready.append([x, y])
+                    return self.checkCoupsRec(forward[i][0], forward[i][1], teamtocheck, toret,
+                                              checkedalready=checkedalready, depart=depart)
+                '''
                 if self.game.grid[j[0]][j[1]] == teamtocheck and self.game.grid[forward[i][0]][forward[i][1]]==0:
                     toret.append(forward[i])
-                    checkedalready.append([x,y])
                     self.canEatRec.setdefault(str((forward[i][0],forward[i][1])),[])
                     if str((forward[i][0],forward[i][1])) in self.canEatRec.keys():
                         print("debugDepart = ",str(depart))
@@ -45,7 +63,8 @@ class GameBoard:
                         self.canEatRec[str((forward[i][0],forward[i][1]))].append([j[0],j[1]])
                     else:
                         self.canEatRec[str((forward[i][0],forward[i][1]))]=[[j[0],j[1]]]
-                    return self.checkCoupsRec(forward[i][0],forward[i][1],teamtocheck,toret,checkedalready=checkedalready,depart=depart)
+                    checkedalready.append([x, y])
+                    return self.checkCoupsRec(forward[i][0],forward[i][1],teamtocheck,toret,checkedalready=checkedalready,depart=depart)'''
             except IndexError as e:
                 print(e)
                 continue
@@ -80,6 +99,7 @@ class GameBoard:
                     self.cases[i][k] = pion
                 else:
                     self.cases[i][k] = None
+                self.canvas.create_text(i * self.square+10, k * self.square+30, fill="yellow", text=str((i, k)), width=10,justify="center",anchor="center")
 
     def selectPion(self, event):
         """selectione un pion sur le plateau"""
@@ -96,7 +116,9 @@ class GameBoard:
                         for i in posToPlay:
                             self.canvas.create_rectangle(i[0] * 80, i[1] * 80, i[0] * 80 + 80, i[1] * 80 + 80,
                                                          fill="blue")
+
                             self.highlighted.append([i[0], i[1]])
+
 
     def deleteHighlighted(self):
         """Permet de supprimer les carré bleus qui apparaissent lorsqu'on clique sur un pion"""
@@ -156,8 +178,9 @@ class GameBoard:
                 if [posX + 1, posY - deplacement] in self.highlighted:
                     return False
                 toret.append([posX + 1, posY - deplacement])
-
-            toret.extend(self.checkCoupsRec(posX, posY, other_team,toret=[],depart=(posX, posY),checkedalready=[]))
+            self.path=self.checkCoupsRec(posX, posY, other_team,toret=[],depart=(posX, posY),checkedalready=[])
+            print("path = ",self.path)
+            toret.extend(self.path)
 
             return toret
         else: #si collé a gauche ou a droite
