@@ -1,7 +1,7 @@
 import tkinter as tk
 import pandas as pd
 import ia as ia
-import game
+import game as G
 import Pion
 import os
 
@@ -46,6 +46,44 @@ class GameBoard:
 
 
 
+    def checkCoup(self,x,y,deplacement,dame=False):
+
+        toret=[]
+        if dame == False:
+            for i,j in enumerate([[x+1,y-deplacement],[x-1,y-deplacement]]):
+                try:
+                    if self.game.grid[j[0]][j[1]] == 0:
+                        toret.append(j)
+                except IndexError as e:
+                    print(e)
+                    continue
+            return toret
+        else:
+            pas=1
+            tocheck = [[1, - 1],
+                       [ - 1, - 1],
+                       [  1, 1],
+                       [ - 1, 1]]
+            for j in tocheck:
+                pas=1
+                while pas<10:
+                    print("zef")
+                    try:
+                        print([x + j[0] * pas],[y + j[1] * pas])
+                        if self.game.grid[x+j[0]*pas][y+j[1]*pas]==0:
+                            toret.append([x+j[0]*pas,y+j[1]*pas])
+                        else:
+                            break
+
+                        pas += 1
+                    except IndexError as e:
+                        print("yo le rap")
+                        pas += 1
+                        continue
+
+            return toret
+
+
 
     def checkCoupsRec(self,x,y,teamtocheck,toret=[],checkedalready=[],depart=()):
 
@@ -65,18 +103,6 @@ class GameBoard:
                     checkedalready.append([x, y])
                     return self.checkCoupsRec(forward[i][0], forward[i][1], teamtocheck, toret,
                                               checkedalready=checkedalready, depart=depart)
-                '''
-                if self.game.grid[j[0]][j[1]] == teamtocheck and self.game.grid[forward[i][0]][forward[i][1]]==0:
-                    toret.append(forward[i])
-                    self.canEatRec.setdefault(str((forward[i][0],forward[i][1])),[])
-                    if str((forward[i][0],forward[i][1])) in self.canEatRec.keys():
-                        print("debugDepart = ",str(depart))
-                        print("debug = ",self.canEatRec)
-                        self.canEatRec[str((forward[i][0],forward[i][1]))].append([j[0],j[1]])
-                    else:
-                        self.canEatRec[str((forward[i][0],forward[i][1]))]=[[j[0],j[1]]]
-                    checkedalready.append([x, y])
-                    return self.checkCoupsRec(forward[i][0],forward[i][1],teamtocheck,toret,checkedalready=checkedalready,depart=depart)'''
             except IndexError as e:
                 print(e)
                 continue
@@ -121,7 +147,11 @@ class GameBoard:
                 if cell == None and [x, y] in self.highlighted and (event.x > x * self.square and event.x < (x + 1) * self.square) and (event.y > y * self.square and event.y < (y + 1) * self.square):
                     self.tryPlay(x, y)
                 if cell != None and (event.x > cell.x1 and event.x < cell.x2) and (event.y > cell.y1 and event.y < cell.y2) and cell.team == self.game.current:
-                    posToPlay = self.isPlayable(x, y)
+                    print(cell.isDame)
+                    if cell.isDame==True:
+                        posToPlay = self.isPlayableDame(x, y)
+                    else:
+                        posToPlay = self.isPlayable(x, y)
                     if posToPlay == False:
                         self.deleteHighlighted()
                     elif not len(posToPlay) == 0:
@@ -140,7 +170,25 @@ class GameBoard:
         self.canEat = {}
         self.canEatRec = {}
 
-
+    def isPlayableDame(self, posX, posY):
+        """verifie si une dame a la position posX and posY peut jouer
+         et renvoie une liste des coups disponibles ou false si la piece est deja selectionnéé"""
+        #print(int(posX))
+        grid = self.game.grid
+        cases = self.cases
+        self.deleteHighlighted()
+        self.selectedPion = cases[posX][posY]
+        self.selectedPionPosition = [posX, posY]
+        deplacement= -1 if (self.selectedPion.team==1) else 1
+        toret = []
+        other_team = 2 if (self.selectedPion.team==1) else 1
+        tocheck = 0 if (self.selectedPion.team==1) else 9
+        toret=self.checkCoup(posX, posY, deplacement,dame=True)
+        print(toret)
+        #self.path = [[posX, posY]]
+        #self.path.extend(self.checkCoupsRec(posX, posY, other_team, toret=[], depart=(posX, posY), checkedalready=[]))
+        #toret.extend(self.path[1:])
+        return toret
     def isPlayable(self, posX, posY):
         """verifie si une piece a la position posX and posY peut jouer
          et renvoie une liste des coups disponibles ou false si la piece est deja selectionnéé"""
@@ -154,77 +202,12 @@ class GameBoard:
         toret = []
         other_team = 2 if (self.selectedPion.team==1) else 1
         tocheck = 0 if (self.selectedPion.team==1) else 9
-
-
-
-        if not (posX == 0 or posX == 9):
-
-
-            if (not posX == 0) and grid[posX - 1][posY - deplacement] == other_team and grid[posX - 2][posY - 2 * deplacement] == 0:
-                self.canEat[str((posX - 2,posY - 2 * deplacement))]=(posX - 1,posY - deplacement)
-                toret.append([posX - 2, posY - 2 * deplacement])
-            if not posY==tocheck and not posX == 0 and grid[posX - 1][posY + deplacement] == other_team and grid[posX - 2][posY + 2 * deplacement] == 0:
-                self.canEat[str((posX - 2, posY + 2 * deplacement))]=(posX - 1, posY + deplacement)
-                toret.append([posX - 2, posY + 2 * deplacement])
-
-            if (not posX == 8) and grid[posX + 1][posY - deplacement] == other_team and grid[posX + 2][posY - 2 * deplacement] == 0:
-                self.canEat[str((posX + 2,posY - 2 * deplacement))]=(posX + 1,posY - deplacement)
-
-                toret.append([posX + 2, posY - 2 * deplacement])
-
-            if not posY==tocheck and (not posX == 8) and grid[posX + 1][posY + deplacement] == other_team and grid[posX + 2][posY + 2 * deplacement] == 0:
-                self.canEat[str((posX + 2, posY + 2 * deplacement))]=(posX + 1, posY + deplacement)
-                toret.append([posX + 2, posY + 2 * deplacement])
-            if grid[posX - 1][posY - deplacement] == 0:
-                if [posX - 1, posY - deplacement] in self.highlighted:
-                    return False
-                toret.append([posX - 1, posY - deplacement])
-            if grid[posX + 1][posY - deplacement] == 0:
-                if [posX + 1, posY - deplacement] in self.highlighted:
-                    return False
-                toret.append([posX + 1, posY - deplacement])
-            self.path=[[posX, posY]]
-            self.path.extend(self.checkCoupsRec(posX, posY, other_team,toret=[],depart=(posX, posY),checkedalready=[]))
-            toret.extend(self.path[1:])
-
-            return toret
-        else: #si collé a gauche ou a droite
-            if posX == 9 and grid[posX - 1][posY - deplacement] == 0: # check en haut a droite
-                if [posX - 1, posY - deplacement] in self.highlighted:
-                    return False
-                toret.append([posX - 1, posY - deplacement])
-            elif posX == 0 and grid[posX + 1][posY - deplacement] == 0: # check en haut a gauche
-                if [posX + 1, posY - deplacement] in self.highlighted:
-                    return False
-                toret.append([posX + 1, posY - deplacement])
-            if posX == 9 and grid[posX - 1][posY - deplacement] == other_team and grid[posX - 2][posY - 2 * deplacement] == 0: # check en haut a gauche si il y a un pion et si c'est vide derriere
-                self.canEat[str((posX - 2,posY - 2 * deplacement))] = (posX - 1,posY - deplacement)
-
-                toret.append([posX - 2, posY - 2 * deplacement])
-
-            if (not posY==tocheck) and posX == 9 and grid[posX - 1][posY + deplacement] == other_team and grid[posX - 2][posY + 2 * deplacement] == 0: # check en bas a gauche si il y a un pion et si c'est vide derriere
-
-                self.canEat[str((posX - 2, posY + 2 * deplacement))] = (posX - 1,posY + deplacement)
-
-                toret.append([posX - 2, posY + 2 * deplacement])
-
-            if not posY==tocheck and posX == 0 and grid[posX + 1][posY - deplacement] == other_team and grid[posX + 2][posY - 2 * deplacement] == 0: # check en haut a droite si il y a un pion et si c'est vide derriere
-
-                self.canEat[str((posX + 2,posY - 2 * deplacement))] = (posX + 1,posY - deplacement)
-
-                toret.append([posX + 2, posY - 2 * deplacement])
-
-            if posX == 0 and grid[posX + 1][posY + deplacement] == other_team and grid[posX + 2][posY + 2 * deplacement] == 0: # check en bas a droite si il y a un pion et si c'est vide derriere
-
-                self.canEat[str((posX + 2,posY + 2 * deplacement))] = (posX + 1,posY + deplacement)
-
-                toret.append([posX + 2, posY + 2 * deplacement])
-
-            self.path = [[posX, posY]]
-            self.path.extend(
-                self.checkCoupsRec(posX, posY, other_team, toret=[], depart=(posX, posY), checkedalready=[]))
-            toret.extend(self.path[1:])
-            return toret
+        toret=self.checkCoup(posX, posY, deplacement)
+        print(toret)
+        self.path = [[posX, posY]]
+        self.path.extend(self.checkCoupsRec(posX, posY, other_team, toret=[], depart=(posX, posY), checkedalready=[]))
+        toret.extend(self.path[1:])
+        return toret
 
     def tryPlay(self, posX, posY,isVirtual=False):
         """Essaie de jouer a la position posX,posY dans la grille de jeu
