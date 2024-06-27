@@ -21,6 +21,7 @@ class GameBoard:
         self.selectedPionPosition = [] #Position du Pion de la case selectionnée
         self.square = 80 #Taille des carrés
         self.currDame=()
+        self.path= []
         if isVirtual == False:
             self.refreshGrid()
 
@@ -29,12 +30,23 @@ class GameBoard:
 
 
     def getParcour(self,arrivee):
-        depart=self.selectedPionPosition
+        todelete=[]
+        if arrivee not in self.path:
+            return todelete
+        for i in range(len(self.path)-1):
+            if self.path[i]==arrivee:
+                return todelete
+            tmp=(int(abs(self.path[i][0]+self.path[i+1][0])/2),int((abs(self.path[i][1]+self.path[i+1][1])/2)))
+            todelete.append(tmp)
+
+        return todelete
+
+
 
 
 
     def checkCoupsRec(self,x,y,teamtocheck,toret=[],checkedalready=[],depart=()):
-        print('checkCoupsRec')
+
         if [x,y] in checkedalready:
             return toret
         forward=[x + 2, y + 2], [x - 2, y + 2], [x + 2, y - 2], [x - 2, y - 2]
@@ -45,8 +57,6 @@ class GameBoard:
                     toret.append(forward[i])
                     self.canEatRec.setdefault(str((forward[i][0], forward[i][1])), [])
                     if str((forward[i][0], forward[i][1])) in self.canEatRec.keys():
-                        print("debugDepart = ", str(depart))
-                        print("debug = ", self.canEatRec)
                         self.canEatRec[str((forward[i][0], forward[i][1]))].append([j[0], j[1]])
                     else:
                         self.canEatRec[str((forward[i][0], forward[i][1]))] = [[j[0], j[1]]]
@@ -138,7 +148,6 @@ class GameBoard:
         self.deleteHighlighted()
         self.selectedPion = cases[posX][posY]
         self.selectedPionPosition = [posX, posY]
-        print("canEatRec= ",self.canEatRec)
         deplacement= -1 if (self.selectedPion.team==1) else 1
         toret = []
         other_team = 2 if (self.selectedPion.team==1) else 1
@@ -150,25 +159,19 @@ class GameBoard:
 
 
             if (not posX == 0) and grid[posX - 1][posY - deplacement] == other_team and grid[posX - 2][posY - 2 * deplacement] == 0:
-                print("passé",1)
                 self.canEat[str((posX - 2,posY - 2 * deplacement))]=(posX - 1,posY - deplacement)
                 toret.append([posX - 2, posY - 2 * deplacement])
-            print("posY= ",posY)
-            print("check= ", tocheck)
             if not posY==tocheck and not posX == 0 and grid[posX - 1][posY + deplacement] == other_team and grid[posX - 2][posY + 2 * deplacement] == 0:
-                print("passé", 2)
                 self.canEat[str((posX - 2, posY + 2 * deplacement))]=(posX - 1, posY + deplacement)
                 toret.append([posX - 2, posY + 2 * deplacement])
 
             if (not posX == 8) and grid[posX + 1][posY - deplacement] == other_team and grid[posX + 2][posY - 2 * deplacement] == 0:
-                print("passé", 3)
                 self.canEat[str((posX + 2,posY - 2 * deplacement))]=(posX + 1,posY - deplacement)
 
                 toret.append([posX + 2, posY - 2 * deplacement])
 
             if not posY==tocheck and (not posX == 8) and grid[posX + 1][posY + deplacement] == other_team and grid[posX + 2][posY + 2 * deplacement] == 0:
                 self.canEat[str((posX + 2, posY + 2 * deplacement))]=(posX + 1, posY + deplacement)
-                print("passé", 4)
                 toret.append([posX + 2, posY + 2 * deplacement])
             if grid[posX - 1][posY - deplacement] == 0:
                 if [posX - 1, posY - deplacement] in self.highlighted:
@@ -178,9 +181,9 @@ class GameBoard:
                 if [posX + 1, posY - deplacement] in self.highlighted:
                     return False
                 toret.append([posX + 1, posY - deplacement])
-            self.path=self.checkCoupsRec(posX, posY, other_team,toret=[],depart=(posX, posY),checkedalready=[])
-            print("path = ",self.path)
-            toret.extend(self.path)
+            self.path=[[posX, posY]]
+            self.path.extend(self.checkCoupsRec(posX, posY, other_team,toret=[],depart=(posX, posY),checkedalready=[]))
+            toret.extend(self.path[1:])
 
             return toret
         else: #si collé a gauche ou a droite
@@ -215,6 +218,10 @@ class GameBoard:
 
                 toret.append([posX + 2, posY + 2 * deplacement])
 
+            self.path = [[posX, posY]]
+            self.path.extend(
+                self.checkCoupsRec(posX, posY, other_team, toret=[], depart=(posX, posY), checkedalready=[]))
+            toret.extend(self.path[1:])
             return toret
 
     def tryPlay(self, posX, posY,isVirtual=False):
@@ -224,21 +231,22 @@ class GameBoard:
                 @return: True si le pion a bougé
                 @return: False sinon
                 """
-        print("caneatrec =",self.canEatRec)
+        print("cliqué =",[posX,posY])
+        print("path =", self.path)
+        print("passage =", self.getParcour([posX,posY]))
         if self.selectedPion == None:
             return False
         if [posX, posY] in self.highlighted: #le bout de code suivant sert a jouer le coup
             print("mange recursif  =>  ", str((posX, posY)))
-            if str((posX, posY)) in self.canEatRec.keys():
-                for i in self.canEatRec[str((posX, posY))]:
+            for i in self.getParcour([posX,posY]):
+                self.game.grid[i[0]][i[1]] = 0
 
-                    self.game.grid[i[0]][i[1]] = 0
-            elif str((posX, posY)) in self.canEat.keys():
-                key = str((posX, posY))
-                print(self.canEat)
-                toeat = self.canEat[key]
-                print(toeat)
-                self.game.grid[toeat[0]][toeat[1]]=0
+            # if str((posX, posY)) in self.canEat.keys():
+            #     key = str((posX, posY))
+            #     print(self.canEat)
+            #     toeat = self.canEat[key]
+            #     print(toeat)
+            #     self.game.grid[toeat[0]][toeat[1]]=0
             #print(self.canEat)
             self.cases[posX][posY] = None
             self.cases[posX][posY] = self.selectedPion
