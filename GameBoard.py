@@ -1,8 +1,9 @@
 import tkinter as tk
-
-import game as G
+import pandas as pd
+import ia as ia
+import game
 import Pion
-
+import os
 
 class GameBoard:
     def __init__(self,isVirtual=False):
@@ -11,9 +12,10 @@ class GameBoard:
             self.canvas = tk.Canvas(self.window, width=800, height=800)
             self.canvas.grid(row=1, column=1, padx=20, pady=20)
             self.canvas.bind("<Button-1>", self.selectPion)
+        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.cases = [[None for i in range(10)] for j in range(10)]
         self.game = G.Game(isVirtual=True)
-
+        self.allMoves = []
         self.highlighted = []  #positions des cases mise en bleu a la selection d'un pion [[x,y],[x2,y2],...]
         self.canEat = {} #dictionnaire avec pour clé la position d'arrivee sous forme de string '(x,y)' et pour valeurs la position du pion mangé lors du deplacement
         self.canEatRec={} #dictionnaire avec pour clé la position d'arrivee sous forme de string '(x,y)' et pour valeurs les positions des pions mangés lors du deplacement
@@ -248,6 +250,7 @@ class GameBoard:
             #     print(toeat)
             #     self.game.grid[toeat[0]][toeat[1]]=0
             #print(self.canEat)
+            self.allMoves.append(f'{self.selectedPionPosition} -> {[posX, posY]}')
             self.cases[posX][posY] = None
             self.cases[posX][posY] = self.selectedPion
             self.game.grid[posX][posY] = self.selectedPion.team
@@ -263,7 +266,40 @@ class GameBoard:
                 print("finito")
             return True
 
+    def export_to_csv(self):
+        filename = 'moves1.csv'
+        if os.path.exists(filename):
+            df = pd.read_csv(filename, index_col=0)
+        else:
+            df = pd.DataFrame()
+        game_number = 1
+        col_name = f'game{game_number}'
+        if col_name not in df.columns:
+            df[col_name] = ''
+        white_move_number = 1
+        black_move_number = 1
+        for i in range(len(self.allMoves)):
+            if i % 2 == 0:
+                line_name = f'white{white_move_number}'
+                white_move_number += 1
+            else:
+                line_name = f'black{black_move_number}'
+                black_move_number += 1
+            df.at[line_name, col_name] = self.allMoves[i]
+        df.to_csv(filename, index_label='Index')
 
+    def on_closing(self):
+        self.export_to_csv()
+        self.window.destroy()
+
+    def get_all_pieces_positions(self):
+        """retourne la liste des pions"""
+        pieces_positions = [] #changer ca en dico
+        for x, row in enumerate(self.cases):
+            for y, cell in enumerate(row):
+                if cell is not None:
+                    pieces_positions.append({"position": (x, y), "color": cell.team})
+        return pieces_positions
 
     def print(self):
         for row in self.cases:
@@ -278,3 +314,5 @@ class GameBoard:
 if __name__ == "__main__":
     game = GameBoard()
     game.window.mainloop()
+    game.export_to_csv()
+
