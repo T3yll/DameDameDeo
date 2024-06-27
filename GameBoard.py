@@ -1,15 +1,16 @@
 import tkinter as tk
 import pandas as pd
-
+import ia as ia
 import game
 import Pion
-
+import os
 
 class GameBoard:
     def __init__(self):
         self.window = tk.Tk()
+        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.canvas = tk.Canvas(self.window, width=800, height=800)
-        self.cases = [[Pion.Pion(self.canvas, 0, 0, 0, 0, "black") for _ in range(10)] for _ in range(10)]
+        self.cases = [[None for i in range(10)] for j in range(10)]
         self.game = game.Game()
         self.canvas.grid(row=1, column=1, padx=20, pady=20)
         self.canvas.bind("<Button-1>", self.selectPion)
@@ -17,6 +18,7 @@ class GameBoard:
         self.selectedPion = None
         self.selectedPionPosition = []
         self.square = 80
+        self.allMoves = []
         for i, j in enumerate(self.game.grid):
             for k, l in enumerate(j):
                 color = "brown" if (i + k) % 2 == 0 else "grey"
@@ -37,7 +39,7 @@ class GameBoard:
 
     def refreshGrid(self):
 
-        """rafraichit l'affichage de la grille pour update la position des pions"""
+        # rafraichit l'affichage de la grille pour update la position des pions
         self.canvas.delete("all")
         for i, j in enumerate(self.game.grid):
             for k, l in enumerate(j):
@@ -46,15 +48,18 @@ class GameBoard:
                                              k * self.square + self.square, fill=color)
                 if l == 1:
                     pion = Pion.Pion(self.canvas, i * self.square, k * self.square, i * self.square + self.square,
-                                     k * self.square + self.square, "black", 5)
+                                     k * self.square + self.square, "black", 1)
                     self.cases[i][k] = pion
                 elif l == 2:
                     pion = Pion.Pion(self.canvas, i * self.square, k * self.square, i * self.square + self.square,
-                                     k * self.square + self.square, "white", 5)
+                                     k * self.square + self.square, "white", 2)
                     self.cases[i][k] = pion
                 else:
                     self.cases[i][k] = None
-        export_to_csv(self)
+        self.print()
+        posToPlay = ia.evalMoves(self)
+        
+        
 
     def selectPion(self, event):
         """selectione un pion sur le plateau"""
@@ -125,31 +130,67 @@ class GameBoard:
         if self.selectedPion == None:
             print("TG")
             return False
-        if [posX, posY] in self.highlighted:
-            self.cases[posX][posY] = self.selectedPion
+        if [posX, posY] in self.highlighted: #nouvelle
+            self.cases[posX][posY] = self.selectedPion #ancienne pos
+            self.allMoves.append(f'{self.selectedPionPosition} -> {[posX, posY]}')
+
+
             self.game.grid[posX][posY] = 2
             self.game.grid[self.selectedPionPosition[0]][self.selectedPionPosition[1]] = 0
             print("deplace")
             self.refreshGrid()
             self.highlighted = []
             return True
+        
 
-    #def print(self):
-     #   for row in self.cases:
-      #      print(row)
+    def export_to_csv(self):
+        filename = 'moves1.csv'
+        if os.path.exists(filename):
+            df = pd.read_csv(filename, index_col=0)
+        else:
+            df = pd.DataFrame()
+        game_number = 1
+        col_name = f'game{game_number}'
+        if col_name not in df.columns:
+            df[col_name] = ''
+        white_move_number = 1
+        black_move_number = 1
+        for i in range(len(self.allMoves)):
+            if i % 2 == 0:
+                line_name = f'white{white_move_number}'
+                white_move_number += 1
+            else:
+                line_name = f'black{black_move_number}'
+                black_move_number += 1
+            df.at[line_name, col_name] = self.allMoves[i]
+        df.to_csv(filename, index_label='Index')
 
-def export_to_csv(self, filename='positions.csv'):
-        """Exporte la position de tous les pions sur le plateau en format CSV"""
-        data = []
+    def on_closing(self):
+        self.export_to_csv()
+        self.window.destroy()
+
+    def get_all_pieces_positions(self):
+        """retourne la liste des pions"""
+        pieces_positions = [] #changer ca en dico
         for x, row in enumerate(self.cases):
-            for y, pion in enumerate(row):
-                if pion is not None:
-                    data.append([x, y, pion.color, pion.size])
+            for y, cell in enumerate(row):
+                if cell is not None:
+                    pieces_positions.append({"position": (x, y), "color": cell.team})
+        return pieces_positions
+    
 
-        df = pd.DataFrame(data, columns=['X', 'Y', 'Color', 'Size'])
-        df.to_csv(filename, index=False)
+    def print(self):
+        for row in self.cases:
+            toprint= []
+            for cell in row:
+                if cell != None:
+                    toprint.append(cell.team)
+                else:
+                    toprint.append(0)
+            print(toprint)
 
 if __name__ == '__main__':
     game = GameBoard()
     game.window.mainloop()
     game.export_to_csv()
+

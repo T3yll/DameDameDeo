@@ -6,7 +6,7 @@ def generate_dames_moves():
         return 0 <= x < 10 and 0 <= y < 10
     for row in range(10):
         for col in range(10):
-            if (row + col) % 2 != 0:  #cases noires
+            if (row + col) % 2 == 0:  #cases noires
                 coord = (row, col)
                 directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
                 for dr, dc in directions:

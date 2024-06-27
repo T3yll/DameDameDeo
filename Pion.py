@@ -1,7 +1,7 @@
 import tkinter as tk
 
 class Pion:
-    def __init__(self, canvas, x:int, y:int,x2,y2, color, size=10):
+    def __init__(self, canvas, x:int, y:int,x2,y2, color, team, size=10):
         self.canvas = canvas
         self.x1 = x
         self.x2 = x2
@@ -11,6 +11,7 @@ class Pion:
         self.size:float = size
         self.oval = None
         self.draw()
+        self.team = team
 
     def draw(self):
         self.oval = self.canvas.create_oval(self.x1+self.size, self.y1+self.size, self.x2-self.size, self.y2-self.size, fill=self.color, outline="black")
