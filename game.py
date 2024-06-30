@@ -4,13 +4,19 @@ import numpy as np
 
 
 class Game:
-    def __init__(self,isVirtual=False):
+    def __init__(self):
         self.grid = [[0 for x in range(10)] for y in range(10)]
         self.tour = 1
         self.current = random.choice([1, 2])
-        self.placeBegin()
+        self.placeBegin(True)
 
-    def placeBegin(self):
+    def placeBegin(self,debug=False):
+        if debug:
+            self.grid=[[1,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],
+                       [0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],
+                       [0,0,2,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],
+                       [0,0,0,0,0,0,0,0,0,0]]
+            return
         current = 1
         for i, j in enumerate(self.grid):
             for k, l in enumerate(j):

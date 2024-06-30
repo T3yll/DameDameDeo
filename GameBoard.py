@@ -14,7 +14,7 @@ class GameBoard:
             self.canvas.bind("<Button-1>", self.selectPion)
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.cases = [[None for i in range(10)] for j in range(10)]
-        self.game = G.Game(isVirtual=True)
+        self.game = G.Game()
         self.allMoves = []
         self.highlighted = []  #positions des cases mise en bleu a la selection d'un pion [[x,y],[x2,y2],...]
         self.canEat = {} #dictionnaire avec pour clé la position d'arrivee sous forme de string '(x,y)' et pour valeurs la position du pion mangé lors du deplacement
@@ -22,7 +22,7 @@ class GameBoard:
         self.selectedPion = None #Objet Pion de la case selectionnée
         self.selectedPionPosition = [] #Position du Pion de la case selectionnée
         self.square = 80 #Taille des carrés
-        self.currDame=()
+        self.Dames=[]
         self.path= []
         if isVirtual == False:
             self.refreshGrid()
@@ -159,12 +159,12 @@ class GameBoard:
 
         for i, j in enumerate(self.game.grid):
             for k, l in enumerate(j):
-                isDame=True
+
+                isDame =  True if [i,k] in self.Dames else False
+
                 color = "brown" if (i + k) % 2 == 0 else "grey"
                 self.canvas.create_rectangle(i * self.square, k * self.square, i * self.square + self.square,
                                              k * self.square + self.square, fill=color)
-                if (i,k)==(self.currDame):
-                    isDame=True
                 if l == 1:
                     pion = Pion.Pion(self.canvas, i * self.square, k * self.square, i * self.square + self.square,
                                      k * self.square + self.square, "black", 1,isDame=isDame)
@@ -228,6 +228,7 @@ class GameBoard:
         #self.path.extend(self.checkCoupsRec(posX, posY, other_team, toret=[], depart=(posX, posY), checkedalready=[]))
         #toret.extend(self.path[1:])
         return toret
+
     def isPlayable(self, posX, posY):
         """verifie si une piece a la position posX and posY peut jouer
          et renvoie une liste des coups disponibles ou false si la piece est deja selectionnéé"""
@@ -272,11 +273,18 @@ class GameBoard:
             self.cases[posX][posY] = self.selectedPion
             self.game.grid[posX][posY] = self.selectedPion.team
             self.game.grid[self.selectedPionPosition[0]][self.selectedPionPosition[1]] = 0
+            tocheck = 9 if (self.selectedPion.team == 1) else 0
+            print(tocheck,posY)
+            if posY == tocheck:
+                print("connard")
+                self.Dames.append([posX, posY])
             self.refreshGrid()
             self.highlighted = []
             self.canEat = {}
             self.canEatRec={}
+
             self.game.changePlayer()
+
 
 
             if not self.game.isEnd() == False:
