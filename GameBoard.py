@@ -31,15 +31,20 @@ class GameBoard:
 
 
 
-    def getParcour(self,arrivee):
+    def getParcour(self,arrivee,dame=False):
         todelete=[]
         if arrivee not in self.path:
             return todelete
-        for i in range(len(self.path)-1):
-            if self.path[i]==arrivee:
-                return todelete
-            tmp=(int(abs(self.path[i][0]+self.path[i+1][0])/2),int((abs(self.path[i][1]+self.path[i+1][1])/2)))
-            todelete.append(tmp)
+        if dame==False:
+            for i in range(len(self.path)-1):
+                if self.path[i]==arrivee:
+                    return todelete
+                tmp=(int(abs(self.path[i][0]+self.path[i+1][0])/2),int((abs(self.path[i][1]+self.path[i+1][1])/2)))
+                todelete.append(tmp)
+        else:
+            pass
+
+
 
         return todelete
 
@@ -67,9 +72,7 @@ class GameBoard:
             for j in tocheck:
                 pas=1
                 while pas<10:
-                    print("zef")
                     try:
-                        print([x + j[0] * pas],[y + j[1] * pas])
                         if self.game.grid[x+j[0]*pas][y+j[1]*pas]==0:
                             toret.append([x+j[0]*pas,y+j[1]*pas])
                         else:
@@ -77,7 +80,6 @@ class GameBoard:
 
                         pas += 1
                     except IndexError as e:
-                        print("yo le rap")
                         pas += 1
                         continue
 
@@ -85,28 +87,64 @@ class GameBoard:
 
 
 
-    def checkCoupsRec(self,x,y,teamtocheck,toret=[],checkedalready=[],depart=()):
-
-        if [x,y] in checkedalready:
+    def checkCoupsRec(self,x,y,teamtocheck,toret=[],checkedalready=[],depart=(),dame=False,currentDirection=None):
+        if [x, y] in checkedalready:
             return toret
-        forward=[x + 2, y + 2], [x - 2, y + 2], [x + 2, y - 2], [x - 2, y - 2]
-        for i,j in enumerate([[x+1,y+1],[x-1,y+1],[x+1,y-1],[x-1,y-1]]):
-            try:
 
-                if self.game.grid[j[0]][j[1]] == teamtocheck and self.game.grid[forward[i][0]][forward[i][1]] == 0:
-                    toret.append(forward[i])
-                    self.canEatRec.setdefault(str((forward[i][0], forward[i][1])), [])
-                    if str((forward[i][0], forward[i][1])) in self.canEatRec.keys():
-                        self.canEatRec[str((forward[i][0], forward[i][1]))].append([j[0], j[1]])
-                    else:
-                        self.canEatRec[str((forward[i][0], forward[i][1]))] = [[j[0], j[1]]]
-                    checkedalready.append([x, y])
-                    return self.checkCoupsRec(forward[i][0], forward[i][1], teamtocheck, toret,
-                                              checkedalready=checkedalready, depart=depart)
-            except IndexError as e:
-                print(e)
-                continue
-        return toret
+        if dame==False:
+            if [x,y] in checkedalready:
+                return toret
+            forward=[x + 2, y + 2], [x - 2, y + 2], [x + 2, y - 2], [x - 2, y - 2]
+            for i,j in enumerate([[x+1,y+1],[x-1,y+1],[x+1,y-1],[x-1,y-1]]):
+                try:
+
+                    if self.game.grid[j[0]][j[1]] == teamtocheck and self.game.grid[forward[i][0]][forward[i][1]] == 0:
+                        toret.append(forward[i])
+                        self.canEatRec.setdefault(str((forward[i][0], forward[i][1])), [])
+                        if str((forward[i][0], forward[i][1])) in self.canEatRec.keys():
+                            self.canEatRec[str((forward[i][0], forward[i][1]))].append([j[0], j[1]])
+                        else:
+                            self.canEatRec[str((forward[i][0], forward[i][1]))] = [[j[0], j[1]]]
+                        checkedalready.append([x, y])
+                        return self.checkCoupsRec(forward[i][0], forward[i][1], teamtocheck, toret,
+                                                  checkedalready=checkedalready, depart=depart)
+                except IndexError as e:
+                    print(e)
+                    continue
+            return toret
+        else:
+            print("passage recursif",x,y)
+            pas = 1
+
+            tocheck = [[1, - 1],[- 1, - 1],[1, 1],[- 1, 1]]
+            for j in tocheck:
+                print(j)
+                pas = 1
+                while pas < 10:
+                    try:
+                        if self.game.grid[x + j[0] * pas][y + j[1] * pas] == teamtocheck and self.game.grid[x + j[0] * (pas+1)][y + j[1] * (pas+1)] == 0:
+                            toret.append([x + j[0] * (pas+1), y + j[1] * (pas+1)])
+                            checkedalready.append([x, y])
+                            self.checkCoupsRec(x + j[0] * (pas+1), y + j[1] * (pas+1),teamtocheck,toret,checkedalready,dame=True,currentDirection=j)
+                        elif self.game.grid[x + j[0] * pas][y + j[1] * pas] == 0:
+                            if currentDirection!=None:
+                                if j==currentDirection:
+                                    toret.append([x + j[0] * pas, y + j[1] * pas])
+                                    pas += 1
+                                    continue
+                            else:
+                                toret.append([x + j[0] * pas, y + j[1] * pas])
+                                pas += 1
+                                continue
+                        else:
+                            pas=10
+                        pas += 1
+                    except IndexError as e:
+                        pas += 1
+                        continue
+
+            return toret
+
 
 
 
@@ -147,7 +185,6 @@ class GameBoard:
                 if cell == None and [x, y] in self.highlighted and (event.x > x * self.square and event.x < (x + 1) * self.square) and (event.y > y * self.square and event.y < (y + 1) * self.square):
                     self.tryPlay(x, y)
                 if cell != None and (event.x > cell.x1 and event.x < cell.x2) and (event.y > cell.y1 and event.y < cell.y2) and cell.team == self.game.current:
-                    print(cell.isDame)
                     if cell.isDame==True:
                         posToPlay = self.isPlayableDame(x, y)
                     else:
@@ -184,7 +221,9 @@ class GameBoard:
         other_team = 2 if (self.selectedPion.team==1) else 1
         tocheck = 0 if (self.selectedPion.team==1) else 9
         toret=self.checkCoup(posX, posY, deplacement,dame=True)
-        print(toret)
+        self.path = [[posX, posY]]
+        self.path.extend(self.checkCoupsRec(posX, posY, other_team, toret=[], depart=(posX, posY), checkedalready=[],dame=True))
+        toret.extend(self.path[1:])
         #self.path = [[posX, posY]]
         #self.path.extend(self.checkCoupsRec(posX, posY, other_team, toret=[], depart=(posX, posY), checkedalready=[]))
         #toret.extend(self.path[1:])
@@ -203,7 +242,6 @@ class GameBoard:
         other_team = 2 if (self.selectedPion.team==1) else 1
         tocheck = 0 if (self.selectedPion.team==1) else 9
         toret=self.checkCoup(posX, posY, deplacement)
-        print(toret)
         self.path = [[posX, posY]]
         self.path.extend(self.checkCoupsRec(posX, posY, other_team, toret=[], depart=(posX, posY), checkedalready=[]))
         toret.extend(self.path[1:])
@@ -216,13 +254,9 @@ class GameBoard:
                 @return: True si le pion a bougé
                 @return: False sinon
                 """
-        print("cliqué =",[posX,posY])
-        print("path =", self.path)
-        print("passage =", self.getParcour([posX,posY]))
         if self.selectedPion == None:
             return False
         if [posX, posY] in self.highlighted: #le bout de code suivant sert a jouer le coup
-            print("mange recursif  =>  ", str((posX, posY)))
             for i in self.getParcour([posX,posY]):
                 self.game.grid[i[0]][i[1]] = 0
 
