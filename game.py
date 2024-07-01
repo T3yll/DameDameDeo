@@ -51,3 +51,9 @@ class Game:
     def print(self):
         for i, j in enumerate(self.grid):
             print(j)
+
+    def getCurrent(self):
+        return self.current
+    
+    def setCurrent(self,current):
+        self.current = current

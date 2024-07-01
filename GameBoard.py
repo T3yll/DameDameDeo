@@ -2,6 +2,7 @@ import tkinter as tk
 import pandas as pd
 import ia as ia
 import game as G
+import game as G
 import Pion
 import os
 
@@ -24,12 +25,13 @@ class GameBoard:
         self.square = 80 #Taille des carrés
         self.Dames=[]
         self.path= []
+        self.current = 0
         if isVirtual == False:
             self.refreshGrid()
-
-       # print(self.cases)
-
-
+        print(self.game.getCurrent())
+        self.current = self.game.getCurrent()
+        if self.current == 1:
+            self.move_ai()
 
     def getParcour(self,arrivee,dame=False):
         todelete=[]
@@ -98,53 +100,20 @@ class GameBoard:
             for i,j in enumerate([[x+1,y+1],[x-1,y+1],[x+1,y-1],[x-1,y-1]]):
                 try:
 
-                    if self.game.grid[j[0]][j[1]] == teamtocheck and self.game.grid[forward[i][0]][forward[i][1]] == 0:
-                        toret.append(forward[i])
-                        self.canEatRec.setdefault(str((forward[i][0], forward[i][1])), [])
-                        if str((forward[i][0], forward[i][1])) in self.canEatRec.keys():
-                            self.canEatRec[str((forward[i][0], forward[i][1]))].append([j[0], j[1]])
-                        else:
-                            self.canEatRec[str((forward[i][0], forward[i][1]))] = [[j[0], j[1]]]
-                        checkedalready.append([x, y])
-                        return self.checkCoupsRec(forward[i][0], forward[i][1], teamtocheck, toret,
-                                                  checkedalready=checkedalready, depart=depart)
-                except IndexError as e:
-                    print(e)
-                    continue
-            return toret
-        else:
-            print("passage recursif",x,y)
-            pas = 1
-
-            tocheck = [[1, - 1],[- 1, - 1],[1, 1],[- 1, 1]]
-            for j in tocheck:
-                print(j)
-                pas = 1
-                while pas < 10:
-                    try:
-                        if self.game.grid[x + j[0] * pas][y + j[1] * pas] == teamtocheck and self.game.grid[x + j[0] * (pas+1)][y + j[1] * (pas+1)] == 0:
-                            toret.append([x + j[0] * (pas+1), y + j[1] * (pas+1)])
-                            checkedalready.append([x, y])
-                            self.checkCoupsRec(x + j[0] * (pas+1), y + j[1] * (pas+1),teamtocheck,toret,checkedalready,dame=True,currentDirection=j)
-                        elif self.game.grid[x + j[0] * pas][y + j[1] * pas] == 0:
-                            if currentDirection!=None:
-                                if j==currentDirection:
-                                    toret.append([x + j[0] * pas, y + j[1] * pas])
-                                    pas += 1
-                                    continue
-                            else:
-                                toret.append([x + j[0] * pas, y + j[1] * pas])
-                                pas += 1
-                                continue
-                        else:
-                            pas=10
-                        pas += 1
-                    except IndexError as e:
-                        pas += 1
-                        continue
-
-            return toret
-
+                if self.game.grid[j[0]][j[1]] == teamtocheck and self.game.grid[forward[i][0]][forward[i][1]] == 0:
+                    toret.append(forward[i])
+                    self.canEatRec.setdefault(str((forward[i][0], forward[i][1])), [])
+                    if str((forward[i][0], forward[i][1])) in self.canEatRec.keys():
+                        self.canEatRec[str((forward[i][0], forward[i][1]))].append([j[0], j[1]])
+                    else:
+                        self.canEatRec[str((forward[i][0], forward[i][1]))] = [[j[0], j[1]]]
+                    checkedalready.append([x, y])
+                    return self.checkCoupsRec(forward[i][0], forward[i][1], teamtocheck, toret,
+                                              checkedalready=checkedalready, depart=depart)
+               except IndexError as e:
+                print(e)
+                continue
+        return toret
 
 
 
@@ -153,6 +122,7 @@ class GameBoard:
 
 
     def refreshGrid(self):
+        print("hola")
 
         """rafraichit l'affichage de la grille pour update la position des pions"""
         self.canvas.delete("all")
@@ -176,6 +146,7 @@ class GameBoard:
                 else:
                     self.cases[i][k] = None
                 self.canvas.create_text(i * self.square+10, k * self.square+30, fill="yellow", text=str((i, k)), width=10,justify="center",anchor="center")
+        self.game.changePlayer()
 
     def selectPion(self, event):
         """selectione un pion sur le plateau"""
@@ -286,12 +257,11 @@ class GameBoard:
             self.highlighted = []
             self.canEat = {}
             self.canEatRec={}
-
-            if not self.game.changePlayer():
-                #victoire
-                pass
-
-
+            self.current = 1
+            print("playai", self.current)
+            if self.current == 1:            
+                print("AI")
+                self.move_ai()
 
             if not self.game.isEnd() == False:
                 print("finito")
@@ -318,6 +288,58 @@ class GameBoard:
                 black_move_number += 1
             df.at[line_name, col_name] = self.allMoves[i]
         df.to_csv(filename, index_label='Index')
+
+    def move_ai(self):
+        black_positions = []
+        bestmove = ia.evalMoves(self)
+        # print(bestmove)
+        for x, row in enumerate(self.cases):
+            for y, cell in enumerate(row):
+                if cell is not None and cell.team == 1:
+                    black_positions.append({"position": (x, y)})
+        for piece in black_positions:
+            # print("Piece", piece["position"])
+            # print("bestmove" , bestmove[0])
+            if piece["position"] == bestmove[0]:
+                # print("MA mere la pute")
+                self.selectedPion = self.cases[piece["position"][0]][piece["position"][1]]
+                self.selectedPionPosition = [piece["position"][0], piece["position"][1]]
+                print("Vivre ensemble", bestmove[1][0], bestmove[1][1])
+
+                self.playAI(bestmove[1][0],bestmove[1][1])
+                return
+            
+    def playAI(self, posX, posY,isVirtual=False):
+        """Essaie de jouer a la position posX,posY dans la grille de jeu
+                @:parameter posX: Position X dans la grille de jeu
+                @:parameter posY: Position Y dans la grille de jeu
+                @return: True si le pion a bougé
+                @return: False sinon
+                """
+        if self.selectedPion == None:
+            return False
+        else:
+            print("Passage", posX)
+            print("mange recursif  =>  ", str((posX, posY)))
+
+            newPosX = int(posX)
+            newPosY = int(posY)
+            self.allMoves.append(f'{self.selectedPionPosition} -> {[newPosX, newPosY]}')
+            self.cases[newPosX][newPosY] = None
+            self.cases[newPosX][newPosY] = self.selectedPion
+            self.game.grid[newPosX][newPosY] = self.selectedPion.team
+            self.game.grid[self.selectedPionPosition[0]][self.selectedPionPosition[1]] = 0
+            self.refreshGrid()
+            self.highlighted = []
+            self.canEat = {}
+            self.canEatRec={}
+            self.current = 2
+            print("playai", self.current)
+
+            if not self.game.isEnd() == False:
+                print("finito")
+            return True
+
 
     def on_closing(self):
         self.export_to_csv()
