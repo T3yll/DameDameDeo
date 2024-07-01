@@ -41,10 +41,12 @@ class Game:
         return False
 
     def changePlayer(self):
+        if self.isEnd():
+            return False
         print("wedfwe")
         self.current = 2 if self.current == 1 else 1
         self.tour += 1
-        return
+        return True
 
     def print(self):
         for i, j in enumerate(self.grid):

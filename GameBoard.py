@@ -269,13 +269,17 @@ class GameBoard:
             #     self.game.grid[toeat[0]][toeat[1]]=0
             #print(self.canEat)
             self.allMoves.append(f'{self.selectedPionPosition} -> {[posX, posY]}')
+            if self.selectedPionPosition in self.Dames:
+                self.Dames.remove(self.selectedPionPosition)
+                self.Dames.append([posX, posY])
+
             self.cases[posX][posY] = None
             self.cases[posX][posY] = self.selectedPion
             self.game.grid[posX][posY] = self.selectedPion.team
             self.game.grid[self.selectedPionPosition[0]][self.selectedPionPosition[1]] = 0
             tocheck = 9 if (self.selectedPion.team == 1) else 0
             print(tocheck,posY)
-            if posY == tocheck:
+            if posY == tocheck and [posX, posY] not in self.Dames:
                 print("connard")
                 self.Dames.append([posX, posY])
             self.refreshGrid()
@@ -283,7 +287,9 @@ class GameBoard:
             self.canEat = {}
             self.canEatRec={}
 
-            self.game.changePlayer()
+            if not self.game.changePlayer():
+                #victoire
+                pass
 
 
 
