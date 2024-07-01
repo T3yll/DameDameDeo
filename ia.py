@@ -3,6 +3,7 @@ import pandas as pd
 import GameBoard as gb
 import generationDico as gd
 
+
 def evalMoves(gameboard):
     moves_dict = gd.generate_dames_moves()
     all_pieces = gameboard.get_all_pieces_positions()
@@ -12,8 +13,8 @@ def evalMoves(gameboard):
             black_pieces.append(piece["position"])
     for piece_position in black_pieces:
         for move in moves_dict:
-            #print("Move:", move)
-            #print("Piece:", piece_position)
+            # print("Move:", move)
+            # print("Piece:", piece_position)
             if move == piece_position:
                 moveTest = (move[0] - 1, move[1] + 1)
                 print("shakaponk", moveTest)
@@ -27,11 +28,10 @@ def evalMoves(gameboard):
     if not best_moves:
         return None, None
     best_move = random.choice(best_moves)
-    print ("Best move:", best_move)
+    print("Best move:", best_move)
     initial_position = (best_move[0] - 1, best_move[1] + 1)
     print("Best move incremented:", initial_position)
-    return best_move , initial_position
-    
+    return best_move, initial_position
 
     # initial_position = None
     # for piece_position, _ in black_pieces:

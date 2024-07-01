@@ -1,6 +1,9 @@
 import pandas as pd
 
+
+'''
 def generate_dames_moves():
+    
     moves_dict = {}
     def is_within_board(x, y):
         return 0 <= x < 10 and 0 <= y < 10
@@ -17,5 +20,14 @@ def generate_dames_moves():
     moves_df = pd.DataFrame(moves_dict.items(), columns=['Coordonnee', 'Valeur'])
     moves_df.to_csv('moves.csv', index=False)
     return moves_dict
-generate_dames_moves()
+    
+'''
+
+
+def is_within_board(x, y):
+    return 0 <= x < 10 and 0 <= y < 10
+
+
+def generate_dames_moves(grid):
+    moves_dict = {}
 

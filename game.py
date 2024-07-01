@@ -8,7 +8,7 @@ class Game:
         self.grid = [[0 for x in range(10)] for y in range(10)]
         self.tour = 1
         self.current = random.choice([1, 2])
-        self.placeBegin(True)
+        self.placeBegin()
 
     def placeBegin(self,debug=False):
         if debug:
