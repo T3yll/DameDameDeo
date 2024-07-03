@@ -25,5 +25,3 @@ class Game:
     def print(self):
         for i,j in enumerate(self.grid):
             print(j)
-
-
