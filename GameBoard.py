@@ -25,6 +25,7 @@ class GameBoard:
         self.square = 80 #Taille des carrés
         self.Dames=[]
         self.path= []
+        self.gameSequence=[]
         self.current = self.game.getCurrent()
         print("playai", self.current)
         self.refreshGrid()
@@ -48,10 +49,12 @@ class GameBoard:
                 todelete.append(tmp)
         else:
             pass
-
-
-
         return todelete
+     
+    def getParcourIA(self,depart,mange):
+        dir=[depart[0]-mange[0]/2,depart[1]-mange[1]/2]
+        arrivee=[mange[0]+dir[0],mange[1]+dir[1]]
+        return [depart[0]+arrivee[0]/2,depart[1]+arrivee[1]/2]
 
 
 
@@ -65,7 +68,6 @@ class GameBoard:
                     if self.game.grid[j[0]][j[1]] == 0:
                         toret.append(j)
                 except IndexError as e:
-                    print(e)
                     continue
             return toret
         else:
@@ -89,6 +91,30 @@ class GameBoard:
                         continue
 
             return toret
+        
+    def checkCoupIA(self,x,y):
+
+        toret=[]
+        canEatRec={}
+        forward=[x + 2, y + 2], [x - 2, y + 2], [x + 2, y - 2], [x - 2, y - 2]
+        for i,j in enumerate([[x+1,y+1],[x-1,y+1],[x+1,y-1],[x-1,y-1]]):
+            try:
+                if any(num < 0 for num in [x-1,y+1,x+1,y-1]):
+                    raise(IndexError("index negatif"))
+                if self.game.grid[j[0]][j[1]] == 2 and self.game.grid[forward[i][0]][forward[i][1]] == 0:
+                    toret.append(forward[i])
+                    canEatRec.setdefault(str((forward[i][0], forward[i][1])), [])
+                    print("ajout")
+                    if str((forward[i][0], forward[i][1])) in canEatRec.keys():
+                        canEatRec[str((forward[i][0], forward[i][1]))].append([j[0], j[1]])
+                    else:
+                        canEatRec[str((forward[i][0], forward[i][1]))] = [[j[0], j[1]]]
+                    print(canEatRec)
+                elif self.game.grid[j[0]][j[1]] == 0 and j in [[x+1,y+1],[x-1,y+1]] :
+                    toret.append(j)
+            except IndexError as e:
+                continue
+        return toret,canEatRec
 
 
 
@@ -114,7 +140,6 @@ class GameBoard:
                         return self.checkCoupsRec(forward[i][0], forward[i][1], teamtocheck, toret,
                                                   checkedalready=checkedalready, depart=depart)
                 except IndexError as e:
-                    print(e)
                     continue
             return toret
         else:
@@ -317,6 +342,8 @@ class GameBoard:
             df[col_name] = ''
         white_move_number = 1
         black_move_number = 1
+        if len(self.allMoves)==0:
+            return
         for i in range(len(self.allMoves)):
             if i % 2 == 0:
                 line_name = f'white{white_move_number}'
@@ -329,23 +356,15 @@ class GameBoard:
 
     def move_ai(self):
         black_positions = []
-        bestmove = ia.evalMoves(self)
-        # print(bestmove)
-        for x, row in enumerate(self.cases):
-            for y, cell in enumerate(row):
-                if cell is not None and cell.team == 1:
-                    black_positions.append({"position": (x, y)})
-        for piece in black_positions:
-            # print("Piece", piece["position"])
-            # print("bestmove" , bestmove[0])
-            if piece["position"] == bestmove[0]:
-                # print("MA mere la pute")
-                self.selectedPion = self.cases[piece["position"][0]][piece["position"][1]]
-                self.selectedPionPosition = [piece["position"][0], piece["position"][1]]
-                print("Vivre ensemble", bestmove[1][0], bestmove[1][1])
+        bestmove,currentPosition = ia.evalMoves(self)
+        currentPosition = eval(currentPosition)
 
-                self.playAI(bestmove[1][0], bestmove[1][1])
-                return
+        self.selectedPion = self.cases[currentPosition[0]][currentPosition[1]]
+        self.selectedPionPosition = [currentPosition[0], currentPosition[1]]
+        print("Vivre ensemble", bestmove[0], bestmove[1])
+
+        self.playAI(bestmove[0], bestmove[1])
+        return
 
     def playAI(self, posX, posY):
         """Essaie de jouer a la position posX,posY dans la grille de jeu
@@ -372,7 +391,6 @@ class GameBoard:
             self.canEat = {}
             self.canEatRec = {}
             self.current = 2
-            print("playai", self.current)
 
             if not self.game.isEnd() == False:
                 print("finito")

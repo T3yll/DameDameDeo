@@ -2,36 +2,54 @@ import random
 import pandas as pd
 import GameBoard as gb
 import generationDico as gd
+import numpy as np
+import os
 
 
-def evalMoves(gameboard):
-    moves_dict = gd.generate_dames_moves()
-    all_pieces = gameboard.get_all_pieces_positions()
-    black_pieces = []
-    for piece in all_pieces:
-        if piece["color"] == 1:
-            black_pieces.append(piece["position"])
-    for piece_position in black_pieces:
-        for move in moves_dict:
-            # print("Move:", move)
-            # print("Piece:", piece_position)
-            if move == piece_position:
-                moveTest = (move[0] - 1, move[1] + 1)
-                print("shakaponk", moveTest)
-                for piece in all_pieces:
-                    if piece["position"] != moveTest:
-                        moves_dict[piece_position] = moves_dict.get(piece_position, 0) + 1
 
-    print(moves_dict)
-    max_score = max(moves_dict.values(), default=0)
-    best_moves = [move for move, score in moves_dict.items() if score == max_score]
-    if not best_moves:
-        return None, None
-    best_move = random.choice(best_moves)
-    print("Best move:", best_move)
-    initial_position = (best_move[0] - 1, best_move[1] + 1)
-    print("Best move incremented:", initial_position)
-    return best_move, initial_position
+
+def compareColListe(df:pd.DataFrame, liste):
+    return np.isin(df, liste).all()
+
+def evalMoves(gb:gb.GameBoard):
+    moves_dict,dicoEat = gd.generate_dames_moves(gb)
+    currstr=random.choice(list(moves_dict.keys()))
+    current=currstr
+    best_move= moves_dict[current][0]
+    mange=None
+
+
+    if os.path.exists('moves1.csv'):
+        csv= pd.read_csv('moves1.csv')
+    else:
+        csv = pd.DataFrame()
+    for i in csv.columns[1:]:
+        if compareColListe(csv[i],gb.allMoves): # si la sequence actuelle de jeu se trouve dans le csv
+            tmp = gb.allMoves[gb.game.tour-1]
+            tmp.replace(" -> ", ",")
+            tmp= eval("["+tmp+"]")
+            best_move=tmp[1]
+            current=tmp[0]
+            method="chosen"
+        else:
+            if len(dicoEat)>0:
+                currstr=random.choice(list(dicoEat.keys()))
+                current=eval(currstr)
+                
+                print("mange IA")
+                mange=dicoEat[currstr][random.randint(0,len(dicoEat[currstr])-1)]
+                arrivee = gb.getParcourIA(current,mange)
+                best_move =  arrivee
+            else:
+                current=random.choice(list(moves_dict.keys()))
+                #print("bouge IA")
+                
+                best_move = moves_dict[current][random.randint(0,len(moves_dict[current])-1)]
+            method="random"
+    print("best move " +method+ " : ",current,"->", best_move)  
+    if mange!=None:
+        gb.game.grid[mange[0]][mange[1]]=0
+    return best_move, currstr
 
     # initial_position = None
     # for piece_position, _ in black_pieces:

@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 '''
 def generate_dames_moves():
     
@@ -28,6 +27,18 @@ def is_within_board(x, y):
     return 0 <= x < 10 and 0 <= y < 10
 
 
-def generate_dames_moves(grid):
+def generate_dames_moves(gb):
     moves_dict = {}
+    rec={}
+    for i, row in enumerate(gb.game.grid):
+        for j, col in enumerate(row):
+            if col==1:
+                tmp,tmp2=gb.checkCoupIA(i, j)
+                rec.update(tmp2)
+                
+                if tmp!=[]:
+                    moves_dict[str((i,j))]=tmp
+    print("rec",rec)
+    return moves_dict,rec
+
 

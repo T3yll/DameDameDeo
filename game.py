@@ -32,7 +32,6 @@ class Game:
                 else:
                     if k % 2 == 1:
                         self.grid[i][k] = current
-        self.print()
 
     def isEnd(self):
         tmp = np.unique(np.array(self.grid).flatten())
