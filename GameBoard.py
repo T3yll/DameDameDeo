@@ -61,9 +61,9 @@ class GameBoard:
         print(self.cases)
 
     def graphic(self):
-        self.window.destroy()
-        graphic = Graphic.Graphic()
-        graphic.window.mainloop()
+        csv_file = 'moves1.csv'
+        game_graphic = Graphic.Graphic(csv_file)
+        game_graphic.run()
     
     def victoryscreen(self):
         self.window.destroy()
