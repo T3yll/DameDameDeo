@@ -201,8 +201,8 @@ class GameBoard:
 
     def graphic(self):
         csv_file = 'moves1.csv'
-        game_graphic = Graphic.Graphic(csv_file)
-        game_graphic.run()
+        game_data_analysis = Graphic.Graphic('moves1.csv')
+        game_data_analysis.plot_positions()
     
     def victoryscreen(self):
         self.window.destroy()
