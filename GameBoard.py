@@ -52,9 +52,12 @@ class GameBoard:
         return todelete
      
     def getParcourIA(self,depart,mange):
-        dir=[depart[0]-mange[0]/2,depart[1]-mange[1]/2]
-        arrivee=[mange[0]+dir[0],mange[1]+dir[1]]
-        return [depart[0]+arrivee[0]/2,depart[1]+arrivee[1]/2]
+        print("depart ", depart)
+        print("mange ", mange)
+        dir=[(depart[0]-mange[0]),(depart[1]-mange[1])]
+        arrivee=[mange[0]-dir[0],mange[1]-dir[1]]
+        print("arrivee ", arrivee)
+        return arrivee
 
 
 
@@ -357,8 +360,9 @@ class GameBoard:
     def move_ai(self):
         black_positions = []
         bestmove,currentPosition = ia.evalMoves(self)
+        print("crever", currentPosition)
         currentPosition = eval(currentPosition)
-
+        print("Vivre", currentPosition)
         self.selectedPion = self.cases[currentPosition[0]][currentPosition[1]]
         self.selectedPionPosition = [currentPosition[0], currentPosition[1]]
         print("Vivre ensemble", bestmove[0], bestmove[1])

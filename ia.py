@@ -38,17 +38,21 @@ def evalMoves(gb:gb.GameBoard):
                 
                 print("mange IA")
                 mange=dicoEat[currstr][random.randint(0,len(dicoEat[currstr])-1)]
-                arrivee = gb.getParcourIA(current,mange)
-                best_move =  arrivee
+                depart = gb.getParcourIA(current,mange)
+                best_move = eval(currstr)
+                currstr = str(depart)
+
             else:
-                current=random.choice(list(moves_dict.keys()))
+                currstr = random.choice(list(moves_dict.keys()))
+                current=eval(currstr)
                 #print("bouge IA")
                 
-                best_move = moves_dict[current][random.randint(0,len(moves_dict[current])-1)]
+                best_move = moves_dict[currstr][random.randint(0,len(moves_dict[currstr])-1)]
             method="random"
-    print("best move " +method+ " : ",current,"->", best_move)  
+
     if mange!=None:
         gb.game.grid[mange[0]][mange[1]]=0
+    print("best move " + method + " : ", currstr, "->", best_move)
     return best_move, currstr
 
     # initial_position = None
