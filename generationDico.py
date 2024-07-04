@@ -32,13 +32,17 @@ def generate_dames_moves(gb):
     rec={}
     for i, row in enumerate(gb.game.grid):
         for j, col in enumerate(row):
+            #print(col)
             if col==1:
                 tmp,tmp2=gb.checkCoupIA(i, j)
+
                 rec.update(tmp2)
                 
                 if tmp!=[]:
                     moves_dict[str((i,j))]=tmp
+
     print("rec",rec)
+    print("move_dict", moves_dict)
     return moves_dict,rec
 
 

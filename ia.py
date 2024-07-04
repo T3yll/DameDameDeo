@@ -9,7 +9,7 @@ import os
 
 
 def compareColListe(df:pd.DataFrame, liste):
-    return np.isin(df, liste).all()
+    return np.isin(liste,df).all()
 
 def evalMoves(gb:gb.GameBoard):
     moves_dict,dicoEat = gd.generate_dames_moves(gb)
@@ -17,7 +17,8 @@ def evalMoves(gb:gb.GameBoard):
     current=currstr
     best_move= moves_dict[current][0]
     mange=None
-
+    poids={10:[],5:[],0:[]}
+    method="random"
 
     if os.path.exists('moves1.csv'):
         csv= pd.read_csv('moves1.csv')
@@ -25,11 +26,30 @@ def evalMoves(gb:gb.GameBoard):
         csv = pd.DataFrame()
     for i in csv.columns[1:]:
         if compareColListe(csv[i],gb.allMoves): # si la sequence actuelle de jeu se trouve dans le csv
-            tmp = gb.allMoves[gb.game.tour-1]
-            tmp.replace(" -> ", ",")
+            if len(gb.allMoves)==0:
+                print(csv[csv.columns[0]][0])
+                if csv[csv.columns[0]][0].startswith("black"):
+                    tmp = csv[i][0]
+                    print("vide")
+                    poids[10].append(csv[i][0])
+                else:
+                    tmp = csv[i][1]
+                    if pd.notna(tmp):
+                        poids[10].append(tmp)
+                    print("pas vide")
+            else:
+                tmp = gb.allMoves[gb.game.tour-1]
+                poids[10].append(tmp)
+            print("tmp ",tmp)
+
+            poids = {k: v for k, v in poids.items() if len(v)>0}
+            print(poids)
+            tmp= random.choice(poids[max(poids.keys())])
+
+            tmp = tmp.replace(" -> ", ",")
             tmp= eval("["+tmp+"]")
             best_move=tmp[1]
-            current=tmp[0]
+            currstr=str(tmp[0])
             method="chosen"
         else:
             if len(dicoEat)>0:

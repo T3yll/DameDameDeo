@@ -1,3 +1,4 @@
+import time
 import tkinter as tk
 import pandas as pd
 import ia as ia
@@ -117,12 +118,15 @@ class GameBoard:
         forward=[x + 2, y + 2], [x - 2, y + 2], [x + 2, y - 2], [x - 2, y - 2]
         for i,j in enumerate([[x+1,y+1],[x-1,y+1],[x+1,y-1],[x-1,y-1]]):
             try:
-                if any(num < 0 for num in [x-1,y+1,x+1,y-1]):
+                '''if any(num < 0 for num in [x-1,y+1,x+1,y-1]):
+                    print("con")
+                    raise(IndexError("index negatif"))'''
+                if j[0] <0 or j[1]<0:
+                    print("con")
                     raise(IndexError("index negatif"))
                 if self.game.grid[j[0]][j[1]] == 2 and self.game.grid[forward[i][0]][forward[i][1]] == 0:
                     toret.append(forward[i])
                     canEatRec.setdefault(str((forward[i][0], forward[i][1])), [])
-                    print("ajout")
                     if str((forward[i][0], forward[i][1])) in canEatRec.keys():
                         canEatRec[str((forward[i][0], forward[i][1]))].append([j[0], j[1]])
                     else:
@@ -132,6 +136,7 @@ class GameBoard:
                     toret.append(j)
             except IndexError as e:
                 continue
+        print("--------------")
         return toret,canEatRec
 
 
@@ -243,7 +248,6 @@ class GameBoard:
                 else:
                     self.cases[i][k] = None
                 self.canvas.create_text(i * self.square+10, k * self.square+30, fill="yellow", text=str((i, k)), width=10,justify="center",anchor="center")
-
     def selectPion(self, event):
         """selectione un pion sur le plateau"""
         #self.print()
@@ -348,19 +352,21 @@ class GameBoard:
             if posY == tocheck and [posX, posY] not in self.Dames:
                 print("connard")
                 self.Dames.append([posX, posY])
+            print("refresh")
             self.refreshGrid()
             self.highlighted = []
             self.canEat = {}
             self.canEatRec={}
             self.current=1
             print("playai", self.current)
+
             if self.current == 1:
                 print("AI")
+
                 self.move_ai()
-
-
             if not self.game.isEnd() == False:
                 print("finito")
+                Victoryscreen.VictoryScreen()
             return True
 
     def export_to_csv(self):
