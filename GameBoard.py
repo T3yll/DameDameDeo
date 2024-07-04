@@ -1,15 +1,194 @@
 import tkinter as tk
 import pandas as pd
-
-import game
+import ia as ia
+import game as G
 import Pion
 import Victoryscreen
 import Defeatscreen
 import Graphic
 import Regle
+import os
 
 
 class GameBoard:
+    def __init__(self,isVirtual=False):
+        if isVirtual==False:
+            self.window = tk.Tk()
+            self.canvas = tk.Canvas(self.window, width=800, height=800)
+            self.canvas.grid(row=1, column=1, padx=20, pady=20)
+            self.canvas.bind("<Button-1>", self.selectPion)
+        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.cases = [[None for i in range(10)] for j in range(10)]
+        self.game = G.Game()
+        self.allMoves = []
+        self.highlighted = []  #positions des cases mise en bleu a la selection d'un pion [[x,y],[x2,y2],...]
+        self.canEat = {} #dictionnaire avec pour clé la position d'arrivee sous forme de string '(x,y)' et pour valeurs la position du pion mangé lors du deplacement
+        self.canEatRec={} #dictionnaire avec pour clé la position d'arrivee sous forme de string '(x,y)' et pour valeurs les positions des pions mangés lors du deplacement
+        self.selectedPion = None #Objet Pion de la case selectionnée
+        self.selectedPionPosition = [] #Position du Pion de la case selectionnée
+        self.square = 80 #Taille des carrés
+        self.Dames=[]
+        self.path= []
+        self.gameSequence=[]
+        self.current = self.game.getCurrent()
+        print("playai", self.current)
+        self.refreshGrid()
+        if self.current == 1:
+            print("AI")
+            self.move_ai()
+
+       # print(self.cases)
+
+
+
+    def getParcour(self,arrivee,dame=False):
+        todelete=[]
+        if arrivee not in self.path:
+            return todelete
+        if dame==False:
+            for i in range(len(self.path)-1):
+                if self.path[i]==arrivee:
+                    return todelete
+                tmp=(int(abs(self.path[i][0]+self.path[i+1][0])/2),int((abs(self.path[i][1]+self.path[i+1][1])/2)))
+                todelete.append(tmp)
+        else:
+            pass
+        return todelete
+     
+    def getParcourIA(self,depart,mange):
+        print("depart ", depart)
+        print("mange ", mange)
+        dir=[(depart[0]-mange[0]),(depart[1]-mange[1])]
+        arrivee=[mange[0]-dir[0],mange[1]-dir[1]]
+        print("arrivee ", arrivee)
+        return arrivee
+
+
+
+
+    def checkCoup(self,x,y,deplacement,dame=False):
+
+        toret=[]
+        if dame == False:
+            for i,j in enumerate([[x+1,y-deplacement],[x-1,y-deplacement]]):
+                try:
+                    if self.game.grid[j[0]][j[1]] == 0:
+                        toret.append(j)
+                except IndexError as e:
+                    continue
+            return toret
+        else:
+            pas=1
+            tocheck = [[1, - 1],
+                       [ - 1, - 1],
+                       [  1, 1],
+                       [ - 1, 1]]
+            for j in tocheck:
+                pas=1
+                while pas<10:
+                    try:
+                        if self.game.grid[x+j[0]*pas][y+j[1]*pas]==0:
+                            toret.append([x+j[0]*pas,y+j[1]*pas])
+                        else:
+                            break
+
+                        pas += 1
+                    except IndexError as e:
+                        pas += 1
+                        continue
+
+            return toret
+        
+    def checkCoupIA(self,x,y):
+
+        toret=[]
+        canEatRec={}
+        forward=[x + 2, y + 2], [x - 2, y + 2], [x + 2, y - 2], [x - 2, y - 2]
+        for i,j in enumerate([[x+1,y+1],[x-1,y+1],[x+1,y-1],[x-1,y-1]]):
+            try:
+                if any(num < 0 for num in [x-1,y+1,x+1,y-1]):
+                    raise(IndexError("index negatif"))
+                if self.game.grid[j[0]][j[1]] == 2 and self.game.grid[forward[i][0]][forward[i][1]] == 0:
+                    toret.append(forward[i])
+                    canEatRec.setdefault(str((forward[i][0], forward[i][1])), [])
+                    print("ajout")
+                    if str((forward[i][0], forward[i][1])) in canEatRec.keys():
+                        canEatRec[str((forward[i][0], forward[i][1]))].append([j[0], j[1]])
+                    else:
+                        canEatRec[str((forward[i][0], forward[i][1]))] = [[j[0], j[1]]]
+                    print(canEatRec)
+                elif self.game.grid[j[0]][j[1]] == 0 and j in [[x+1,y+1],[x-1,y+1]] :
+                    toret.append(j)
+            except IndexError as e:
+                continue
+        return toret,canEatRec
+
+
+
+    def checkCoupsRec(self,x,y,teamtocheck,toret=[],checkedalready=[],depart=(),dame=False,currentDirection=None):
+        if [x, y] in checkedalready:
+            return toret
+
+        if dame==False:
+            if [x,y] in checkedalready:
+                return toret
+            forward=[x + 2, y + 2], [x - 2, y + 2], [x + 2, y - 2], [x - 2, y - 2]
+            for i,j in enumerate([[x+1,y+1],[x-1,y+1],[x+1,y-1],[x-1,y-1]]):
+                try:
+
+                    if self.game.grid[j[0]][j[1]] == teamtocheck and self.game.grid[forward[i][0]][forward[i][1]] == 0:
+                        toret.append(forward[i])
+                        self.canEatRec.setdefault(str((forward[i][0], forward[i][1])), [])
+                        if str((forward[i][0], forward[i][1])) in self.canEatRec.keys():
+                            self.canEatRec[str((forward[i][0], forward[i][1]))].append([j[0], j[1]])
+                        else:
+                            self.canEatRec[str((forward[i][0], forward[i][1]))] = [[j[0], j[1]]]
+                        checkedalready.append([x, y])
+                        return self.checkCoupsRec(forward[i][0], forward[i][1], teamtocheck, toret,
+                                                  checkedalready=checkedalready, depart=depart)
+                except IndexError as e:
+                    continue
+            return toret
+        else:
+            print("passage recursif",x,y)
+            pas = 1
+
+            tocheck = [[1, - 1],[- 1, - 1],[1, 1],[- 1, 1]]
+            for j in tocheck:
+                print(j)
+                pas = 1
+                while pas < 10:
+                    try:
+                        if self.game.grid[x + j[0] * pas][y + j[1] * pas] == teamtocheck and self.game.grid[x + j[0] * (pas+1)][y + j[1] * (pas+1)] == 0:
+                            toret.append([x + j[0] * (pas+1), y + j[1] * (pas+1)])
+                            checkedalready.append([x, y])
+                            self.checkCoupsRec(x + j[0] * (pas+1), y + j[1] * (pas+1),teamtocheck,toret,checkedalready,dame=True,currentDirection=j)
+                        elif self.game.grid[x + j[0] * pas][y + j[1] * pas] == 0:
+                            if currentDirection!=None:
+                                if j==currentDirection:
+                                    toret.append([x + j[0] * pas, y + j[1] * pas])
+                                    pas += 1
+                                    continue
+                            else:
+                                toret.append([x + j[0] * pas, y + j[1] * pas])
+                                pas += 1
+                                continue
+                        else:
+                            pas=10
+                        pas += 1
+                    except IndexError as e:
+                        pas += 1
+                        continue
+
+            return toret
+
+
+
+
+
+
+
+
     def __init__(self):
         self.window = tk.Tk()
         self.window.title("Dames")
@@ -85,103 +264,226 @@ class GameBoard:
 
         """rafraichit l'affichage de la grille pour update la position des pions"""
         self.canvas.delete("all")
+
         for i, j in enumerate(self.game.grid):
             for k, l in enumerate(j):
                 self.canvas.create_text(k * self.square + 40, 8, text=self.letters[k], font=("Arial", 12),
                                         fill="Pink")
                 self.canvas.create_text(8, k * self.square + 40, text=k + 1, font=("Arial", 12), fill="Pink")
+
+                isDame =  True if [i,k] in self.Dames else False
+
                 color = "brown" if (i + k) % 2 == 0 else "grey"
                 self.canvas.create_rectangle(i * self.square, k * self.square, i * self.square + self.square,
                                              k * self.square + self.square, fill=color)
                 if l == 1:
                     pion = Pion.Pion(self.canvas, i * self.square, k * self.square, i * self.square + self.square,
-                                     k * self.square + self.square, "black", 5)
+                                     k * self.square + self.square, "black", 1,isDame=isDame)
                     self.cases[i][k] = pion
                 elif l == 2:
                     pion = Pion.Pion(self.canvas, i * self.square, k * self.square, i * self.square + self.square,
-                                     k * self.square + self.square, "white", 5)
+                                     k * self.square + self.square, "white", 2,isDame=isDame)
                     self.cases[i][k] = pion
                 else:
                     self.cases[i][k] = None
-        """export_to_csv(self)"""
+                self.canvas.create_text(i * self.square+10, k * self.square+30, fill="yellow", text=str((i, k)), width=10,justify="center",anchor="center")
 
     def selectPion(self, event):
         """selectione un pion sur le plateau"""
-        # self.print()
+        #self.print()
         for x, row in enumerate(self.cases):
             for y, cell in enumerate(row):
-                if cell == None and [x, y] in self.highlighted and (
-                        event.x > x * self.square and event.x < (x + 1) * self.square) and (
-                        event.y > y * self.square and event.y < (y + 1) * self.square):
+                if cell == None and [x, y] in self.highlighted and (event.x > x * self.square and event.x < (x + 1) * self.square) and (event.y > y * self.square and event.y < (y + 1) * self.square):
                     self.tryPlay(x, y)
-                if cell != None and (event.x > cell.x1 and event.x < cell.x2) and (
-                        event.y > cell.y1 and event.y < cell.y2):
-                    print("Pion selected")
-                    posToPlay = self.isPlayable(x, y)
+                if cell != None and (event.x > cell.x1 and event.x < cell.x2) and (event.y > cell.y1 and event.y < cell.y2) and cell.team == self.current:
+                    if cell.isDame==True:
+                        posToPlay = self.isPlayableDame(x, y)
+                    else:
+                        posToPlay = self.isPlayable(x, y)
                     if posToPlay == False:
                         self.deleteHighlighted()
                     elif not len(posToPlay) == 0:
                         for i in posToPlay:
                             self.canvas.create_rectangle(i[0] * 80, i[1] * 80, i[0] * 80 + 80, i[1] * 80 + 80,
                                                          fill="blue")
+
                             self.highlighted.append([i[0], i[1]])
 
+
     def deleteHighlighted(self):
-        """Permet de supprimer les carre bleus qui apparaissent lorsqu'on clique sur un pion"""
+        """Permet de supprimer les carré bleus qui apparaissent lorsqu'on clique sur un pion"""
         for i in self.highlighted:
             self.canvas.create_rectangle(i[0] * 80, i[1] * 80, i[0] * 80 + 80, i[1] * 80 + 80, fill="brown")
         self.highlighted = []
+        self.canEat = {}
+        self.canEatRec = {}
+
+    def isPlayableDame(self, posX, posY):
+        """verifie si une dame a la position posX and posY peut jouer
+         et renvoie une liste des coups disponibles ou false si la piece est deja selectionnéé"""
+        #print(int(posX))
+        grid = self.game.grid
+        cases = self.cases
+        self.deleteHighlighted()
+        self.selectedPion = cases[posX][posY]
+        self.selectedPionPosition = [posX, posY]
+        deplacement= -1 if (self.selectedPion.team==1) else 1
+        toret = []
+        other_team = 2 if (self.selectedPion.team==1) else 1
+        tocheck = 0 if (self.selectedPion.team==1) else 9
+        toret=self.checkCoup(posX, posY, deplacement,dame=True)
+        self.path = [[posX, posY]]
+        self.path.extend(self.checkCoupsRec(posX, posY, other_team, toret=[], depart=(posX, posY), checkedalready=[],dame=True))
+        toret.extend(self.path[1:])
+        #self.path = [[posX, posY]]
+        #self.path.extend(self.checkCoupsRec(posX, posY, other_team, toret=[], depart=(posX, posY), checkedalready=[]))
+        #toret.extend(self.path[1:])
+        return toret
 
     def isPlayable(self, posX, posY):
         """verifie si une piece a la position posX and posY peut jouer
-         et renvoie une liste des coups disponibles ou false si la piece est deja selectionnee"""
-        print(int(posX))
+         et renvoie une liste des coups disponibles ou false si la piece est deja selectionnéé"""
+        #print(int(posX))
+        grid = self.game.grid
+        cases = self.cases
         self.deleteHighlighted()
-        self.selectedPion = self.cases[posX][posY]
+        self.selectedPion = cases[posX][posY]
         self.selectedPionPosition = [posX, posY]
+        deplacement= -1 if (self.selectedPion.team==1) else 1
         toret = []
-        if not (posX == 0 or posX == 9):
-            if self.game.grid[posX - 1][posY - 1] == 0:
-                if [posX - 1, posY - 1] in self.highlighted:
-                    return False
-                toret.append([posX - 1, posY - 1])
-            if self.game.grid[posX + 1][posY - 1] == 0:
-                if [posX + 1, posY - 1] in self.highlighted:
-                    return False
-                toret.append([posX + 1, posY - 1])
-            return toret
+        other_team = 2 if (self.selectedPion.team==1) else 1
+        tocheck = 0 if (self.selectedPion.team==1) else 9
+        toret=self.checkCoup(posX, posY, deplacement)
+        self.path = [[posX, posY]]
+        self.path.extend(self.checkCoupsRec(posX, posY, other_team, toret=[], depart=(posX, posY), checkedalready=[]))
+        toret.extend(self.path[1:])
+        return toret
 
-        else:
-            if posX == 9 and self.game.grid[posX - 1][posY - 1] == 0:
-                if [posX - 1, posY - 1] in self.highlighted:
-                    return False
-                return [[posX - 1, posY - 1]]
-            elif posX == 0 and self.game.grid[posX + 1][posY - 1] == 0:
-                if [posX + 1, posY - 1] in self.highlighted:
-                    return False
-                return [[posX + 1, posY - 1]]
-            else:
-                return []
-
-    def tryPlay(self, posX, posY):
+    def tryPlay(self, posX, posY,isVirtual=False):
         """Essaie de jouer a la position posX,posY dans la grille de jeu
                 @:parameter posX: Position X dans la grille de jeu
                 @:parameter posY: Position Y dans la grille de jeu
-                @return: True si le pion a bouge
+                @return: True si le pion a bougé
                 @return: False sinon
                 """
-        print("ici")
         if self.selectedPion == None:
-            print("TG")
             return False
-        if [posX, posY] in self.highlighted:
+        if [posX, posY] in self.highlighted: #le bout de code suivant sert a jouer le coup
+            for i in self.getParcour([posX,posY]):
+                self.game.grid[i[0]][i[1]] = 0
+
+            # if str((posX, posY)) in self.canEat.keys():
+            #     key = str((posX, posY))
+            #     print(self.canEat)
+            #     toeat = self.canEat[key]
+            #     print(toeat)
+            #     self.game.grid[toeat[0]][toeat[1]]=0
+            #print(self.canEat)
+            if self.selectedPionPosition in self.Dames:
+                self.Dames.remove(self.selectedPionPosition)
+                self.Dames.append([posX, posY])
+            self.cases[posX][posY] = None
             self.cases[posX][posY] = self.selectedPion
-            self.game.grid[posX][posY] = 2
+            self.game.grid[posX][posY] = self.selectedPion.team
             self.game.grid[self.selectedPionPosition[0]][self.selectedPionPosition[1]] = 0
-            print("deplace")
+            tocheck = 9 if (self.selectedPion.team == 1) else 0
+            print(tocheck,posY)
+            self.allMoves.append(f'{self.selectedPionPosition} -> {[posX, posY]}')
+            if posY == tocheck and [posX, posY] not in self.Dames:
+                print("connard")
+                self.Dames.append([posX, posY])
             self.refreshGrid()
             self.highlighted = []
+            self.canEat = {}
+            self.canEatRec={}
+            self.current=1
+            print("playai", self.current)
+            if self.current == 1:
+                print("AI")
+                self.move_ai()
+
+
+            if not self.game.isEnd() == False:
+                print("finito")
             return True
+
+    def export_to_csv(self):
+        filename = 'moves1.csv'
+        if os.path.exists(filename):
+            df = pd.read_csv(filename, index_col=0)
+        else:
+            df = pd.DataFrame()
+        try:
+            game_number = int(df.columns[-1][4:])+1
+        except:
+            game_number = 1
+
+        col_name = f'game{game_number}'
+        if col_name not in df.columns:
+            df[col_name] = ''
+        white_move_number = 1
+        black_move_number = 1
+        if len(self.allMoves)==0:
+            return
+        for i in range(len(self.allMoves)):
+            if i % 2 == 0:
+                line_name = f'white{white_move_number}'
+                white_move_number += 1
+            else:
+                line_name = f'black{black_move_number}'
+                black_move_number += 1
+            df.at[line_name, col_name] = self.allMoves[i]
+        df.to_csv(filename, index_label='Index')
+
+    def move_ai(self):
+        black_positions = []
+        bestmove,currentPosition = ia.evalMoves(self)
+        print("crever", currentPosition)
+        currentPosition = eval(currentPosition)
+        print("Vivre", currentPosition)
+        self.selectedPion = self.cases[currentPosition[0]][currentPosition[1]]
+        self.selectedPionPosition = [currentPosition[0], currentPosition[1]]
+        print("Vivre ensemble", bestmove[0], bestmove[1])
+
+        self.playAI(bestmove[0], bestmove[1])
+        return
+
+    def playAI(self, posX, posY):
+        """Essaie de jouer a la position posX,posY dans la grille de jeu
+                @:parameter posX: Position X dans la grille de jeu
+                @:parameter posY: Position Y dans la grille de jeu
+                @return: True si le pion a bougé
+                @return: False sinon
+                """
+        if self.selectedPion == None:
+            return False
+        else:
+            print("Passage", posX)
+            print("mange recursif  =>  ", str((posX, posY)))
+
+            newPosX = int(posX)
+            newPosY = int(posY)
+            self.allMoves.append(f'{self.selectedPionPosition} -> {[newPosX, newPosY]}')
+            self.cases[newPosX][newPosY] = None
+            self.cases[newPosX][newPosY] = self.selectedPion
+            self.game.grid[newPosX][newPosY] = self.selectedPion.team
+            self.game.grid[self.selectedPionPosition[0]][self.selectedPionPosition[1]] = 0
+            self.refreshGrid()
+            self.highlighted = []
+            self.canEat = {}
+            self.canEatRec = {}
+            self.current = 2
+
+            if not self.game.isEnd() == False:
+                print("finito")
+            return True
+
+    def on_closing(self):
+        self.window.destroy()
+
+    def get_all_pieces_positions(self):
+        """retourne la liste des pions"""
+        pieces_positions = []  # changer ca en dico
     def new_game(self):
         self.game.__init__()
         self.refreshGrid()
@@ -194,17 +496,23 @@ def export_to_csv(self, filename='positions.csv'):
         #Exporte la position de tous les pions sur le plateau en format CSV
         data = []
         for x, row in enumerate(self.cases):
-            for y, pion in enumerate(row):
-                if pion is not None:
-                    data.append([x, y, pion.color, pion.size])
+            for y, cell in enumerate(row):
+                if cell is not None:
+                    pieces_positions.append({"position": (x, y), "color": cell.team})
+        return pieces_positions
 
-        df = pd.DataFrame(data, columns=['X', 'Y', 'Color', 'Size'])
-        df.to_csv(filename, index=False)
-"""
+    def print(self):
+        for row in self.cases:
+            toprint= []
+            for cell in row:
+                if cell != None:
+                    toprint.append(cell.team)
+                else:
+                    toprint.append(0)
+            print(toprint)
 
 
-        
-if __name__ == '__main__':
+if __name__ == "__main__":
     game = GameBoard()
     game.window.mainloop()
-    """game.export_to_csv()"""
+    game.export_to_csv()
