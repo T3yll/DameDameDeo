@@ -16,7 +16,6 @@ class GameBoard:
         self.canvas = tk.Canvas(self.window, width=800, height=800)
         self.button_frame = tk.Frame(self.window)
         self.button_frame.grid(row=1, column=0, padx=20, pady=20, sticky="n")
-
         self.button = tk.Button(self.button_frame, text="Nouvelle Partie", command=self.new_game)
         self.button.pack(pady=10)
 
