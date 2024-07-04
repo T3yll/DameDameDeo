@@ -18,6 +18,17 @@ class GameBoard:
             self.canvas.grid(row=1, column=1, padx=20, pady=20)
             self.canvas.bind("<Button-1>", self.selectPion)
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.button_frame = tk.Frame(self.window)
+        self.button_frame.grid(row=1,column=0, padx=20, pady=20,sticky="N")
+
+        self.buttonquit = tk.Button(self.button_frame, text="Quit", command=self.window.quit)
+        self.buttonquit.pack(pady=10)
+
+        self.buttongraphic = tk.Button(self.button_frame, text="Graphic", command=self.graphic)
+        self.buttongraphic.pack(pady=10)
+
+        self.buttonregle = tk.Button(self.button_frame, text="Regle", command=self.regle)
+        self.buttonregle.pack(pady=10)
         self.cases = [[None for i in range(10)] for j in range(10)]
         self.game = G.Game()
         self.allMoves = []
@@ -183,62 +194,6 @@ class GameBoard:
             return toret
 
 
-
-
-
-
-
-
-    def __init__(self):
-        self.window = tk.Tk()
-        self.window.title("Dames")
-        self.canvas = tk.Canvas(self.window, width=800, height=800)
-        self.button_frame = tk.Frame(self.window)
-        self.button_frame.grid(row=1, column=0, padx=20, pady=20, sticky="n")
-        self.button = tk.Button(self.button_frame, text="Nouvelle Partie", command=self.new_game)
-        self.button.pack(pady=10)
-
-        self.buttonquit = tk.Button(self.button_frame, text="Quit", command=self.window.quit)
-        self.buttonquit.pack(pady=10)
-
-        self.buttongraphic = tk.Button(self.button_frame, text="Graphic", command=self.graphic)
-        self.buttongraphic.pack(pady=10)
-        
-        self.buttonregle = tk.Button(self.button_frame, text="Regle", command=self.regle)
-        self.buttonregle.pack(pady=10)
-
-        self.cases = [[Pion.Pion(self.canvas, 0, 0, 0, 0, "black") for _ in range(10)] for _ in range(10)]
-        self.game = game.Game()
-        self.canvas.grid(row=1, column=1, padx=20, pady=20)
-        self.canvas.bind("<Button-1>", self.selectPion)
-        self.highlighted = []
-        self.selectedPion = None
-        self.selectedPionPosition = []
-        self.square = 80
-        self.letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
-
-        for i, j in enumerate(self.game.grid):
-            for k, l in enumerate(j):
-                self.canvas.create_text(k * self.square + 40, 8, text=self.letters[k], font=("Arial", 12),
-                                        fill="Pink")
-                self.canvas.create_text(8, k * self.square + 40, text=k + 1, font=("Arial", 12), fill="Pink")
-                color = "brown" if (i + k) % 2 == 0 else "grey"
-                self.canvas.create_rectangle(i * self.square, k * self.square, i * self.square + self.square,
-                                             k * self.square + self.square, fill=color)
-                if l == 1:
-                    pion = Pion.Pion(self.canvas, i * self.square, k * self.square, i * self.square + self.square,
-                                     k * self.square + self.square, "black", 5)
-                    self.cases[i][k] = pion
-                elif l == 2:
-                    pion = Pion.Pion(self.canvas, i * self.square, k * self.square, i * self.square + self.square,
-                                     k * self.square + self.square, "white", 5)
-                    self.cases[i][k] = pion
-                else:
-                    self.cases[i][k] = None
-
-        print(self.cases)
-        
-
     def graphic(self):
         csv_file = 'moves1.csv'
         game_graphic = Graphic.Graphic(csv_file)
@@ -267,7 +222,8 @@ class GameBoard:
 
         for i, j in enumerate(self.game.grid):
             for k, l in enumerate(j):
-                self.canvas.create_text(k * self.square + 40, 8, text=self.letters[k], font=("Arial", 12),
+                letters=['A','B','C','D','E','F','G','H','I','H','J']
+                self.canvas.create_text(k * self.square + 40, 8, text=letters[k], font=("Arial", 12),
                                         fill="Pink")
                 self.canvas.create_text(8, k * self.square + 40, text=k + 1, font=("Arial", 12), fill="Pink")
 
@@ -487,19 +443,8 @@ class GameBoard:
     def new_game(self):
         self.game.__init__()
         self.refreshGrid()
-    #GameBoard()
-    #def print(self):
-     #   for row in self.cases:
-      #      print(row)
-"""
-def export_to_csv(self, filename='positions.csv'):
-        #Exporte la position de tous les pions sur le plateau en format CSV
-        data = []
-        for x, row in enumerate(self.cases):
-            for y, cell in enumerate(row):
-                if cell is not None:
-                    pieces_positions.append({"position": (x, y), "color": cell.team})
-        return pieces_positions
+
+
 
     def print(self):
         for row in self.cases:
