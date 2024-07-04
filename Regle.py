@@ -37,5 +37,7 @@ class Regle:
 
     def newGame(self):
         self.window.destroy()
-        GameBoard.GameBoard()
+        game = GameBoard.GameBoard()
+        game.window.mainloop()
+
 
