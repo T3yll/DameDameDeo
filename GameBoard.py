@@ -58,6 +58,7 @@ class GameBoard:
                     self.cases[i][k] = None
 
         print(self.cases)
+        
 
     def graphic(self):
         csv_file = 'moves1.csv'
